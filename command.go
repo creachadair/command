@@ -12,36 +12,36 @@ import (
 	"os"
 )
 
-// Context is the environment passed to the Run function of a command.
-// A Context implements the io.Writer interface, and should be used as
+// Env is the environment passed to the Run function of a command.
+// An Env implements the io.Writer interface, and should be used as
 // the target of any diagnostic output the command wishes to emit.
 // Primary command output should be sent to stdout.
-type Context struct {
-	Parent  *Context    // if this is a subcommand, its parent context (or nil)
+type Env struct {
+	Parent  *Env        // if this is a subcommand, its parent environment (or nil)
 	Command *C          // the C value that carries the Run function
 	Config  interface{} // configuration data
 	Log     io.Writer   // where to write diagnostic output (nil for os.Stderr)
 }
 
 // output returns the log writer for c.
-func (c *Context) output() io.Writer {
-	if c.Log != nil {
-		return c.Log
+func (e *Env) output() io.Writer {
+	if e.Log != nil {
+		return e.Log
 	}
 	return os.Stderr
 }
 
-func (c *Context) newChild(cmd *C) *Context {
-	cp := *c // shallow copy
+func (e *Env) newChild(cmd *C) *Env {
+	cp := *e // shallow copy
 	cp.Command = cmd
-	cp.Parent = c
+	cp.Parent = e
 	return &cp
 }
 
 // Write implements the io.Writer interface. Writing to a context writes to its
 // designated output stream, allowing the context to be sent diagnostic output.
-func (c *Context) Write(data []byte) (int, error) {
-	return c.output().Write(data)
+func (e *Env) Write(data []byte) (int, error) {
+	return e.output().Write(data)
 }
 
 // C carries the description and invocation function for a command.
@@ -65,12 +65,12 @@ type C struct {
 	CustomFlags bool
 
 	// Execute the action of the command. If nil, calls FailWithUsage.
-	Run func(ctx *Context, args []string) error
+	Run func(env *Env, args []string) error
 
 	// If set, this will be called after flags are parsed (if any) but before
 	// any subcommands are processed. If it reports an error, execution stops
 	// and that error is returned to the caller.
-	Init func(ctx *Context) error
+	Init func(env *Env) error
 
 	// Subcommands of this command.
 	Commands []*C
@@ -91,9 +91,9 @@ func (c *C) HasRunnableSubcommands() bool {
 	return false
 }
 
-// NewContext returns a new root context for c with the optional config value.
-func (c *C) NewContext(config interface{}) *Context {
-	return &Context{Command: c, Config: config}
+// NewEnv returns a new root context for c with the optional config value.
+func (c *C) NewEnv(config interface{}) *Env {
+	return &Env{Command: c, Config: config}
 }
 
 // FindSubcommand returns the subcommand of c matching name, or nil.
@@ -114,8 +114,8 @@ var ErrUsage = errors.New("help requested")
 //
 // Execute writes usage information to ctx and returns ErrUsage if the
 // command-line usage was incorrect or the user requested -help via flags.
-func Execute(ctx *Context, rawArgs []string) error {
-	cmd := ctx.Command
+func Execute(env *Env, rawArgs []string) error {
+	cmd := env.Command
 	args := rawArgs
 
 	// Unless this command does custom flag parsing, parse the arguments and
@@ -124,7 +124,7 @@ func Execute(ctx *Context, rawArgs []string) error {
 		cmd.Flags.Usage = func() {}
 		err := cmd.Flags.Parse(rawArgs)
 		if err == flag.ErrHelp {
-			return runShortHelp(ctx, args)
+			return runShortHelp(env, args)
 		} else if err != nil {
 			return err
 		}
@@ -132,7 +132,7 @@ func Execute(ctx *Context, rawArgs []string) error {
 	}
 
 	if cmd.Init != nil {
-		if err := cmd.Init(ctx); err != nil {
+		if err := cmd.Init(env); err != nil {
 			return fmt.Errorf("initializing %q: %v", cmd.Name, err)
 		}
 	}
@@ -145,17 +145,17 @@ func Execute(ctx *Context, rawArgs []string) error {
 
 		if sub.Runnable() || (hasSub && len(rest) != 0) {
 			// A runnable subcommand takes precedence.
-			return Execute(ctx.newChild(sub), rest)
+			return Execute(env.newChild(sub), rest)
 		} else if hasSub && len(rest) == 0 {
 			// Show help for a topic subcommand with subcommands of its own.
-			return runLongHelp(ctx.newChild(sub), nil)
+			return runLongHelp(env.newChild(sub), nil)
 		} else if cmd.Run == nil {
-			fmt.Fprintf(ctx, "Error: %s command %q not understood\n", cmd.Name, args[0])
+			fmt.Fprintf(env, "Error: %s command %q not understood\n", cmd.Name, args[0])
 			return ErrUsage
 		}
 	}
 	if cmd.Run == nil {
-		return runLongHelp(ctx, args)
+		return runLongHelp(env, args)
 	}
-	return cmd.Run(ctx, args)
+	return cmd.Run(env, args)
 }

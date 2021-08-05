@@ -127,32 +127,32 @@ func writeTopics(w io.Writer, base, label string, topics []HelpInfo) {
 }
 
 // runLongHelp is a run function that implements the "help" functionality.
-func runLongHelp(ctx *Context, args []string) error {
-	ctx.Command.HelpInfo(true).WriteLong(ctx)
+func runLongHelp(env *Env, args []string) error {
+	env.Command.HelpInfo(true).WriteLong(env)
 	return ErrUsage
 }
 
 // runShortHelp is a run function that implements synopsis help.
-func runShortHelp(ctx *Context, args []string) error {
-	ctx.Command.HelpInfo(false).WriteSynopsis(ctx)
+func runShortHelp(env *Env, args []string) error {
+	env.Command.HelpInfo(false).WriteSynopsis(env)
 	return ErrUsage
 }
 
 // RunHelp is a run function that implements long help.  It displays the
 // help for the enclosing command or subtopics of "help" itself.
-func RunHelp(ctx *Context, args []string) error {
+func RunHelp(env *Env, args []string) error {
 	// First check whether the arguments name a parent subcommand.
-	if pt := walkArgs(ctx.Parent.Command, args); pt != nil {
-		return runLongHelp(pt.NewContext(ctx.Config), args)
+	if pt := walkArgs(env.Parent.Command, args); pt != nil {
+		return runLongHelp(pt.NewEnv(env.Config), args)
 	}
 
 	// Otherwise, check whether the arguments name a help subcommand.
-	if ht := walkArgs(ctx.Command, args); ht != nil {
-		return runLongHelp(ht.NewContext(ctx.Config), args)
+	if ht := walkArgs(env.Command, args); ht != nil {
+		return runLongHelp(ht.NewEnv(env.Config), args)
 	}
 
 	// Otherwise this is an unknown topic.
-	fmt.Fprintf(ctx, "Unknown help topic %q\n", strings.Join(args, " "))
+	fmt.Fprintf(env, "Unknown help topic %q\n", strings.Join(args, " "))
 	return ErrUsage
 }
 
