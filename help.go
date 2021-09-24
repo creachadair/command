@@ -11,6 +11,33 @@ import (
 	"text/tabwriter"
 )
 
+// HelpCommand constructs a standardized help command with optional topics.
+// The caller is free to edit the resulting command, each call returns a
+// separate value.
+func HelpCommand(topics []HelpTopic) *C {
+	cmd := &C{
+		Name:  "help",
+		Usage: "[topic/command]",
+		Help:  `Print help for the specified command or topic.`,
+
+		CustomFlags: true,
+		Run:         RunHelp,
+	}
+	for _, topic := range topics {
+		cmd.Commands = append(cmd.Commands, topic.command())
+	}
+	return cmd
+}
+
+// A HelpTopic specifies a name and some help text for use in constructing help
+// topic commands.
+type HelpTopic struct {
+	Name string
+	Help string
+}
+
+func (h HelpTopic) command() *C { return &C{Name: h.Name, Help: h.Help} }
+
 // HelpInfo records synthesized help details for a command.
 type HelpInfo struct {
 	Name     string
