@@ -67,6 +67,10 @@ type C struct {
 	// Execute the action of the command. If nil, calls FailWithUsage.
 	Run func(env *Env, args []string) error
 
+	// If set, this will be called before flags are parsed, to give the command
+	// an opportunity to set flags.
+	SetFlags func(env *Env, fs *flag.FlagSet)
+
 	// If set, this will be called after flags are parsed (if any) but before
 	// any subcommands are processed. If it reports an error, execution stops
 	// and that error is returned to the caller.
@@ -117,6 +121,11 @@ var ErrUsage = errors.New("help requested")
 func Execute(env *Env, rawArgs []string) error {
 	cmd := env.Command
 	args := rawArgs
+
+	// If the command defines a flag setter, invoke it.
+	if cmd.SetFlags != nil {
+		cmd.SetFlags(env, &cmd.Flags)
+	}
 
 	// Unless this command does custom flag parsing, parse the arguments and
 	// check for errors before passing control to the handler.
