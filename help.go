@@ -98,6 +98,12 @@ func (c *C) hasFlagsDefined() (ok bool) {
 	return
 }
 
+func (c *C) setFlags(env *Env, fs *flag.FlagSet) {
+	if c == nil && c.SetFlags != nil {
+		c.SetFlags(env, fs)
+	}
+}
+
 // WriteUsage writes a usage summary to w.
 func (h HelpInfo) WriteUsage(w io.Writer) {
 	if h.Usage != "" {
@@ -153,14 +159,17 @@ func writeTopics(w io.Writer, base, label string, topics []HelpInfo) {
 	fmt.Fprintln(w)
 }
 
-// runLongHelp is a run function that implements the "help" functionality.
-func runLongHelp(env *Env, args []string) error {
-	env.Command.HelpInfo(true).WriteLong(env)
+// runLongHelp is a run function that prints long-form help.
+// The topics are additional help topics to include in the output.
+func printLongHelp(env *Env, args []string, topics []HelpInfo) error {
+	ht := env.Command.HelpInfo(true)
+	ht.Topics = append(ht.Topics, topics...)
+	ht.WriteLong(env)
 	return ErrUsage
 }
 
-// runShortHelp is a run function that implements synopsis help.
-func runShortHelp(env *Env, args []string) error {
+// runShortHelp is a run function that prints synopsis help.
+func printShortHelp(env *Env, args []string) error {
 	env.Command.HelpInfo(false).WriteSynopsis(env)
 	return ErrUsage
 }
@@ -168,28 +177,37 @@ func runShortHelp(env *Env, args []string) error {
 // RunHelp is a run function that implements long help.  It displays the
 // help for the enclosing command or subtopics of "help" itself.
 func RunHelp(env *Env, args []string) error {
-	// First check whether the arguments name a parent subcommand.
-	if pt := walkArgs(env.Parent.Command, args); pt != nil {
-		return runLongHelp(pt.NewEnv(env.Config), args)
+	// Check whether the arguments describe the parent or one of its subcommands.
+	pt := walkArgs(env.Parent, args)
+	if pt == env.Parent.Command {
+		// For the parent, include the help command's own topics.
+		return printLongHelp(pt.NewEnv(env.Config), args, env.Command.HelpInfo(true).Topics)
+	} else if pt != nil {
+		return printLongHelp(pt.NewEnv(env.Config), args, nil)
 	}
 
 	// Otherwise, check whether the arguments name a help subcommand.
-	if ht := walkArgs(env.Command, args); ht != nil {
-		return runLongHelp(ht.NewEnv(env.Config), args)
+	if ht := walkArgs(env, args); ht != nil {
+		return printLongHelp(ht.NewEnv(env.Config), args, nil)
 	}
 
-	// Otherwise this is an unknown topic.
+	// Otherwise the arguments request an unknown topic.
 	fmt.Fprintf(env, "Unknown help topic %q\n", strings.Join(args, " "))
 	return ErrUsage
 }
 
-func walkArgs(cmd *C, args []string) *C {
-	cur := cmd
+func walkArgs(env *Env, args []string) *C {
+	cur := env
+
+	// Populate flags so that the help text will include them.
+	cur.Command.setFlags(cur, &cur.Command.Flags)
 	for _, arg := range args {
-		cur = cur.FindSubcommand(arg)
-		if cur == nil {
+		next := cur.Command.FindSubcommand(arg)
+		if next == nil {
 			return nil
 		}
+		cur = cur.newChild(next)
+		cur.Command.setFlags(cur, &cur.Command.Flags)
 	}
-	return cur
+	return cur.Command
 }

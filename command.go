@@ -133,7 +133,7 @@ func Execute(env *Env, rawArgs []string) error {
 		cmd.Flags.Usage = func() {}
 		err := cmd.Flags.Parse(rawArgs)
 		if err == flag.ErrHelp {
-			return runShortHelp(env, args)
+			return printShortHelp(env, args)
 		} else if err != nil {
 			return err
 		}
@@ -157,14 +157,14 @@ func Execute(env *Env, rawArgs []string) error {
 			return Execute(env.newChild(sub), rest)
 		} else if hasSub && len(rest) == 0 {
 			// Show help for a topic subcommand with subcommands of its own.
-			return runLongHelp(env.newChild(sub), nil)
+			return printLongHelp(env.newChild(sub), nil, nil)
 		} else if cmd.Run == nil {
 			fmt.Fprintf(env, "Error: %s command %q not understood\n", cmd.Name, args[0])
 			return ErrUsage
 		}
 	}
 	if cmd.Run == nil {
-		return runLongHelp(env, args)
+		return printShortHelp(env, args)
 	}
 	return cmd.Run(env, args)
 }
