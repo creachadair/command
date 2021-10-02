@@ -99,7 +99,7 @@ func (c *C) hasFlagsDefined() (ok bool) {
 }
 
 func (c *C) setFlags(env *Env, fs *flag.FlagSet) {
-	if c == nil && c.SetFlags != nil {
+	if c != nil && c.SetFlags != nil {
 		c.SetFlags(env, fs)
 	}
 }
@@ -178,17 +178,17 @@ func printShortHelp(env *Env, args []string) error {
 // help for the enclosing command or subtopics of "help" itself.
 func RunHelp(env *Env, args []string) error {
 	// Check whether the arguments describe the parent or one of its subcommands.
-	pt := walkArgs(env.Parent, args)
-	if pt == env.Parent.Command {
+	target := walkArgs(env.Parent, args)
+	if target == env.Parent {
 		// For the parent, include the help command's own topics.
-		return printLongHelp(pt.NewEnv(env.Config), args, env.Command.HelpInfo(true).Topics)
-	} else if pt != nil {
-		return printLongHelp(pt.NewEnv(env.Config), args, nil)
+		return printLongHelp(target, args, env.Command.HelpInfo(true).Topics)
+	} else if target != nil {
+		return printLongHelp(target, args, nil)
 	}
 
 	// Otherwise, check whether the arguments name a help subcommand.
 	if ht := walkArgs(env, args); ht != nil {
-		return printLongHelp(ht.NewEnv(env.Config), args, nil)
+		return printLongHelp(ht, args, nil)
 	}
 
 	// Otherwise the arguments request an unknown topic.
@@ -196,18 +196,17 @@ func RunHelp(env *Env, args []string) error {
 	return ErrUsage
 }
 
-func walkArgs(env *Env, args []string) *C {
+func walkArgs(env *Env, args []string) *Env {
 	cur := env
 
 	// Populate flags so that the help text will include them.
-	cur.Command.setFlags(cur, &cur.Command.Flags)
 	for _, arg := range args {
 		next := cur.Command.FindSubcommand(arg)
 		if next == nil {
 			return nil
 		}
+		next.setFlags(cur, &next.Flags)
 		cur = cur.newChild(next)
-		cur.Command.setFlags(cur, &cur.Command.Flags)
 	}
-	return cur.Command
+	return cur
 }
