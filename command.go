@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
 )
 
@@ -64,7 +65,7 @@ type C struct {
 	// If true, the command is responsible for flag parsing.
 	CustomFlags bool
 
-	// Execute the action of the command. If nil, calls FailWithUsage.
+	// Perform the action of the command. If nil, calls FailWithUsage.
 	Run func(env *Env, args []string) error
 
 	// If set, this will be called before flags are parsed, to give the command
@@ -110,15 +111,26 @@ func (c *C) FindSubcommand(name string) *C {
 	return nil
 }
 
-// ErrUsage is returned from Execute if the user requested help.
+// ErrUsage is returned from Run if the user requested help.
 var ErrUsage = errors.New("help requested")
 
-// Execute runs the command given unprocessed arguments. If the command has
-// flags they are parsed and errors are handled before invoking the handler.
+// RunOrFail behaves as Run, but prints a log message and calls os.Exit if the
+// command reports an error. If the command succeeds, RunOrFail returns.
+func RunOrFail(env *Env, rawArgs []string) {
+	if err := Run(env, rawArgs); errors.Is(err, ErrUsage) {
+		os.Exit(2)
+	} else if err != nil {
+		log.Printf("Error: %v", err)
+		os.Exit(1)
+	}
+}
+
+// Run runs the command given unprocessed arguments. If the command has flags
+// they are parsed and errors are handled before invoking the handler.
 //
-// Execute writes usage information to ctx and returns ErrUsage if the
-// command-line usage was incorrect or the user requested -help via flags.
-func Execute(env *Env, rawArgs []string) error {
+// Run writes usage information to ctx and returns ErrUsage if the command-line
+// usage was incorrect or the user requested -help via flags.
+func Run(env *Env, rawArgs []string) error {
 	cmd := env.Command
 	args := rawArgs
 
@@ -154,7 +166,7 @@ func Execute(env *Env, rawArgs []string) error {
 
 		if sub.Runnable() || (hasSub && len(rest) != 0) {
 			// A runnable subcommand takes precedence.
-			return Execute(env.newChild(sub), rest)
+			return Run(env.newChild(sub), rest)
 		} else if hasSub && len(rest) == 0 {
 			// Show help for a topic subcommand with subcommands of its own.
 			return printLongHelp(env.newChild(sub), nil, nil)
