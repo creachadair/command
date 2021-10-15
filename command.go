@@ -114,13 +114,24 @@ func (c *C) FindSubcommand(name string) *C {
 // ErrUsage is returned from Run if the user requested help.
 var ErrUsage = errors.New("help requested")
 
+type usageErr string
+
+func (u usageErr) Error() string        { return string(u) }
+func (u usageErr) Is(target error) bool { return target == ErrUsage }
+
+// Usagef returns a formatted error that wraps ErrUsage.
+func Usagef(msg string, args ...interface{}) error {
+	return usageErr(fmt.Sprintf(msg, args...))
+}
+
 // RunOrFail behaves as Run, but prints a log message and calls os.Exit if the
 // command reports an error. If the command succeeds, RunOrFail returns.
 func RunOrFail(env *Env, rawArgs []string) {
-	if err := Run(env, rawArgs); errors.Is(err, ErrUsage) {
-		os.Exit(2)
-	} else if err != nil {
+	if err := Run(env, rawArgs); err != nil {
 		log.Printf("Error: %v", err)
+		if errors.Is(err, ErrUsage) {
+			os.Exit(2)
+		}
 		os.Exit(1)
 	}
 }
