@@ -132,6 +132,7 @@ func (e *Env) Usagef(msg string, args ...interface{}) error {
 func RunOrFail(env *Env, rawArgs []string) {
 	if err := Run(env, rawArgs); err != nil {
 		if u, ok := err.(usageErr); ok {
+			log.Printf("Error: %s", u.msg)
 			u.env.Command.HelpInfo(false).WriteUsage(env)
 		} else if !errors.Is(err, ErrUsage) {
 			log.Printf("Error: %v", err)
