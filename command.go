@@ -114,25 +114,30 @@ func (c *C) FindSubcommand(name string) *C {
 // ErrUsage is returned from Run if the user requested help.
 var ErrUsage = errors.New("help requested")
 
-type usageErr string
+type usageErr struct {
+	env *Env
+	msg string
+}
 
-func (u usageErr) Error() string        { return string(u) }
-func (u usageErr) Is(target error) bool { return target == ErrUsage }
+func (u usageErr) Error() string { return string(u.msg) }
 
-// Usagef returns a formatted error that wraps ErrUsage.
-func Usagef(msg string, args ...interface{}) error {
-	return usageErr(fmt.Sprintf(msg, args...))
+// Usagef returns a formatted error that describes a usage error for the
+// command whose environment is e.
+func (e *Env) Usagef(msg string, args ...interface{}) error {
+	return usageErr{env: e, msg: fmt.Sprintf(msg, args...)}
 }
 
 // RunOrFail behaves as Run, but prints a log message and calls os.Exit if the
 // command reports an error. If the command succeeds, RunOrFail returns.
 func RunOrFail(env *Env, rawArgs []string) {
 	if err := Run(env, rawArgs); err != nil {
-		log.Printf("Error: %v", err)
-		if errors.Is(err, ErrUsage) {
-			os.Exit(2)
+		if u, ok := err.(usageErr); ok {
+			u.env.Command.HelpInfo(false).WriteUsage(env)
+		} else if !errors.Is(err, ErrUsage) {
+			log.Printf("Error: %v", err)
+			os.Exit(1)
 		}
-		os.Exit(1)
+		os.Exit(2)
 	}
 }
 
