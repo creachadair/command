@@ -1,7 +1,6 @@
 # command
 
 [![GoDoc](https://img.shields.io/static/v1?label=godoc&message=reference&color=blue)](https://pkg.go.dev/github.com/creachadair/command)
-[![Go Report Card](https://goreportcard.com/badge/github.com/creachadair/command)](https://goreportcard.com/report/github.com/creachadair/command)
 
 This repository provides Go package that implements basic subcommand dispatch
 for Go command-line programs. The design of this package is based on the way
