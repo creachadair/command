@@ -18,10 +18,10 @@ import (
 // the target of any diagnostic output the command wishes to emit.
 // Primary command output should be sent to stdout.
 type Env struct {
-	Parent  *Env        // if this is a subcommand, its parent environment (or nil)
-	Command *C          // the C value that carries the Run function
-	Config  interface{} // configuration data
-	Log     io.Writer   // where to write diagnostic output (nil for os.Stderr)
+	Parent  *Env      // if this is a subcommand, its parent environment (or nil)
+	Command *C        // the C value that carries the Run function
+	Config  any       // configuration data
+	Log     io.Writer // where to write diagnostic output (nil for os.Stderr)
 }
 
 // output returns the log writer for c.
@@ -97,7 +97,7 @@ func (c *C) HasRunnableSubcommands() bool {
 }
 
 // NewEnv returns a new root context for c with the optional config value.
-func (c *C) NewEnv(config interface{}) *Env {
+func (c *C) NewEnv(config any) *Env {
 	return &Env{Command: c, Config: config}
 }
 
@@ -123,7 +123,7 @@ func (u usageErr) Error() string { return string(u.msg) }
 
 // Usagef returns a formatted error that describes a usage error for the
 // command whose environment is e.
-func (e *Env) Usagef(msg string, args ...interface{}) error {
+func (e *Env) Usagef(msg string, args ...any) error {
 	return usageErr{env: e, msg: fmt.Sprintf(msg, args...)}
 }
 
