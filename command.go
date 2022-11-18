@@ -46,8 +46,27 @@ func (e *Env) Write(data []byte) (int, error) {
 }
 
 // C carries the description and invocation function for a command.
+//
+// When a command is first discovered during argument traversal, its SetFlags
+// hook is executed (if defined) to prepare its flag set.  Then, unless the
+// CustomFlags option is true, the rest of the argument list is parsed by the
+// FlagSet to separate command-specific flags from further arguments and/or
+// subcommands.
+//
+// After flag processing and before attempting to explore subcommands, an Init
+// hook is called if one is defined. If Init reports an error it terminates
+// argument traversal, and that error is reported back to the user.
+//
+// After initialization, if there are any remaining non-flag arguments, we
+// check for a matching subcommand.  If one is found, argument traversal recurs
+// to that subcommand to process the rest of the command-line.
+//
+// Otherwise, if the command defines a Run hook, that hook is executed with the
+// remaining unconsumed arguments. If no Run hook is defined, the traversal
+// stops, logs a help message, and reports an error.
 type C struct {
-	// The name of the command, preferably one word.
+	// The name of the command, preferably one word. The name is during argument
+	// processing to choose which command or subcommand to execute.
 	Name string
 
 	// A terse usage summary for the command. Multiple lines are allowed, but
