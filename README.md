@@ -6,6 +6,4 @@ This repository provides Go package that implements basic subcommand dispatch
 for Go command-line programs. The design of this package is based on the way
 the "go" command-line tool works, but the implementation is not shared.
 
-This package is in a fairly early development state, and should be used with
-caution.  Notably, there are no tests yet, and the API is likely to change in
-various incompatible ways.
+This package is in development, the API is likely to change in various ways.
