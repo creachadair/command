@@ -181,7 +181,7 @@ func Run(env *Env, rawArgs []string) error {
 		cmd.Flags.Usage = func() {}
 		err := cmd.Flags.Parse(rawArgs)
 		if err == flag.ErrHelp {
-			return printShortHelp(env, args)
+			return printLongHelp(env, args, nil)
 		} else if err != nil {
 			return err
 		}
