@@ -81,12 +81,13 @@ type C struct {
 	// processing to choose which command or subcommand to execute.
 	Name string
 
-	// A terse usage summary for the command. Multiple lines are allowed, but
-	// each line should be self-contained for a particular usage sense.
+	// A terse usage summary for the command. Multiple lines are allowed.
+	// Each line should be self-contained for a particular usage sense.
 	Usage string
 
 	// A detailed description of the command. Multiple lines are allowed.
-	// The first non-blank line of this text is used as a synopsis.
+	// The first non-blank line of this text is used as a synopsis; the whole
+	// string is printed for long help.
 	Help string
 
 	// Flags parsed from the raw argument list. This will be initialized before
