@@ -93,7 +93,8 @@ type C struct {
 	// Init or Run is called unless CustomFlags is true.
 	Flags flag.FlagSet
 
-	// If true, the command is responsible for flag parsing.
+	// If false, Flags is used to parse the argument list.  Otherwise, the Run
+	// function is responsible for parsing flags from the argument list.
 	CustomFlags bool
 
 	// Perform the action of the command. If nil, calls FailWithUsage.
