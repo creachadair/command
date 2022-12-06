@@ -2,6 +2,18 @@
 
 // Package command defines plumbing for command dispatch.
 // It is based on and similar in design to the "go" command-line tool.
+//
+// # Overview
+//
+// The command package allows a program to easily process a simple language of
+// named commands, each of which may have its own flags, arguments, and nested
+// subcommands.  A command is represented by a *command.C value carrying help
+// text, usage summaries, and a function to execute its behavior.
+//
+// The Run and RunOrFail functions parse the raw argument list of a program
+// against a tree of *command.C values, parsing flags as needed and executing
+// the selected command or printing appropriate diagnostics. Flags are parsed
+// using the standard "flag" package by default.
 package command
 
 import (
@@ -173,6 +185,7 @@ func Run(env *Env, rawArgs []string) error {
 	// If the command defines a flag setter, invoke it.
 	if cmd.SetFlags != nil {
 		cmd.SetFlags(env, &cmd.Flags)
+		cmd.SetFlags = nil
 	}
 
 	// Unless this command does custom flag parsing, parse the arguments and
