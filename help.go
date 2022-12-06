@@ -99,8 +99,9 @@ func (c *C) hasFlagsDefined() (ok bool) {
 }
 
 func (c *C) setFlags(env *Env, fs *flag.FlagSet) {
-	if c != nil && c.SetFlags != nil {
+	if c != nil && c.SetFlags != nil && !c.isFlagSet {
 		c.SetFlags(env, fs)
+		c.isFlagSet = true
 	}
 }
 

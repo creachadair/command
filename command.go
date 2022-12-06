@@ -110,6 +110,8 @@ type C struct {
 
 	// Subcommands of this command.
 	Commands []*C
+
+	isFlagSet bool // true if SetFlags was invoked
 }
 
 // Runnable reports whether the command has any action defined.
@@ -183,9 +185,9 @@ func Run(env *Env, rawArgs []string) error {
 	args := rawArgs
 
 	// If the command defines a flag setter, invoke it.
-	if cmd.SetFlags != nil {
+	if cmd.SetFlags != nil && !cmd.isFlagSet {
 		cmd.SetFlags(env, &cmd.Flags)
-		cmd.SetFlags = nil
+		cmd.isFlagSet = true
 	}
 
 	// Unless this command does custom flag parsing, parse the arguments and
