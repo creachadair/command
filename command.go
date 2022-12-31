@@ -196,6 +196,7 @@ func Run(env *Env, rawArgs []string) error {
 	// check for errors before passing control to the handler.
 	if !cmd.CustomFlags {
 		cmd.Flags.Usage = func() {}
+		cmd.Flags.SetOutput(io.Discard)
 		err := cmd.Flags.Parse(rawArgs)
 		if err == flag.ErrHelp {
 			return printLongHelp(env, args, nil)
