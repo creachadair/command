@@ -33,6 +33,7 @@ type Env struct {
 	Parent  *Env      // if this is a subcommand, its parent environment (or nil)
 	Command *C        // the C value that carries the Run function
 	Config  any       // configuration data
+	Args    []string  // the unclaimed command-line arguments
 	Log     io.Writer // where to write diagnostic output (nil for os.Stderr)
 }
 
@@ -44,10 +45,11 @@ func (e *Env) output() io.Writer {
 	return os.Stderr
 }
 
-func (e *Env) newChild(cmd *C) *Env {
+func (e *Env) newChild(cmd *C, cargs []string) *Env {
 	cp := *e // shallow copy
 	cp.Command = cmd
 	cp.Parent = e
+	cp.Args = cargs
 	return &cp
 }
 
@@ -108,6 +110,9 @@ type C struct {
 	// If set, this will be called after flags are parsed (if any) but before
 	// any subcommands are processed. If it reports an error, execution stops
 	// and that error is returned to the caller.
+	//
+	// The Init callback is permitted to modify env, and any such modifications
+	// will persist through the rest of the invocation.
 	Init func(env *Env) error
 
 	// Subcommands of this command.
@@ -132,9 +137,7 @@ func (c *C) HasRunnableSubcommands() bool {
 }
 
 // NewEnv returns a new root context for c with the optional config value.
-func (c *C) NewEnv(config any) *Env {
-	return &Env{Command: c, Config: config}
-}
+func (c *C) NewEnv(config any) *Env { return &Env{Command: c, Config: config} }
 
 // FindSubcommand returns the subcommand of c matching name, or nil.
 func (c *C) FindSubcommand(name string) *C {
@@ -184,7 +187,7 @@ func RunOrFail(env *Env, rawArgs []string) {
 // usage was incorrect or the user requested -help via flags.
 func Run(env *Env, rawArgs []string) error {
 	cmd := env.Command
-	args := rawArgs
+	env.Args = rawArgs
 
 	// If the command defines a flag setter, invoke it.
 	if cmd.SetFlags != nil && !cmd.isFlagSet {
@@ -199,11 +202,11 @@ func Run(env *Env, rawArgs []string) error {
 		cmd.Flags.SetOutput(io.Discard)
 		err := cmd.Flags.Parse(rawArgs)
 		if err == flag.ErrHelp {
-			return printLongHelp(env, args, nil)
+			return printLongHelp(env, nil)
 		} else if err != nil {
 			return err
 		}
-		args = cmd.Flags.Args()
+		env.Args = cmd.Flags.Args()
 	}
 
 	if cmd.Init != nil {
@@ -214,23 +217,23 @@ func Run(env *Env, rawArgs []string) error {
 
 	// Unclaimed (non-flag) arguments may be free arguments for this command, or
 	// may belong to a subcommand.
-	if len(args) != 0 {
-		sub, rest := cmd.FindSubcommand(args[0]), args[1:]
+	if len(env.Args) != 0 {
+		sub, rest := cmd.FindSubcommand(env.Args[0]), env.Args[1:]
 		hasSub := sub.HasRunnableSubcommands()
 
 		if sub.Runnable() || (hasSub && len(rest) != 0) {
 			// A runnable subcommand takes precedence.
-			return Run(env.newChild(sub), rest)
+			return Run(env.newChild(sub, rest), rest)
 		} else if hasSub && len(rest) == 0 {
 			// Show help for a topic subcommand with subcommands of its own.
-			return printLongHelp(env.newChild(sub), nil, nil)
+			return printLongHelp(env.newChild(sub, rest), nil)
 		} else if cmd.Run == nil {
-			fmt.Fprintf(env, "Error: %s command %q not understood\n", cmd.Name, args[0])
+			fmt.Fprintf(env, "Error: %s command %q not understood\n", cmd.Name, env.Args[0])
 			return ErrUsage
 		}
 	}
 	if cmd.Run == nil {
-		return printShortHelp(env, args)
+		return printShortHelp(env)
 	}
-	return cmd.Run(env, args)
+	return cmd.Run(env, env.Args)
 }
