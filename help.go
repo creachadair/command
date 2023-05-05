@@ -177,9 +177,9 @@ func printShortHelp(env *Env) error {
 
 // RunHelp is a run function that implements long help.  It displays the
 // help for the enclosing command or subtopics of "help" itself.
-func RunHelp(env *Env, args []string) error {
+func RunHelp(env *Env) error {
 	// Check whether the arguments describe the parent or one of its subcommands.
-	target := walkArgs(env.Parent, args)
+	target := walkArgs(env.Parent, env.Args)
 	if target == env.Parent {
 		// For the parent, include the help command's own topics.
 		return printLongHelp(target, env.Command.HelpInfo(true).Topics)
@@ -188,12 +188,12 @@ func RunHelp(env *Env, args []string) error {
 	}
 
 	// Otherwise, check whether the arguments name a help subcommand.
-	if ht := walkArgs(env, args); ht != nil {
+	if ht := walkArgs(env, env.Args); ht != nil {
 		return printLongHelp(ht, nil)
 	}
 
 	// Otherwise the arguments request an unknown topic.
-	fmt.Fprintf(env, "Unknown help topic %q\n", strings.Join(args, " "))
+	fmt.Fprintf(env, "Unknown help topic %q\n", strings.Join(env.Args, " "))
 	return ErrUsage
 }
 

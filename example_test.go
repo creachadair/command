@@ -52,8 +52,8 @@ This help text is printed by the "help" subcommand.`,
 					fs.BoolVar(&noNewline, "n", false, "Do not print a trailing newline")
 				},
 
-				Run: func(env *command.Env, args []string) error {
-					fmt.Print(strings.Join(args, " "))
+				Run: func(env *command.Env) error {
+					fmt.Print(strings.Join(env.Args, " "))
 					if !noNewline {
 						fmt.Println()
 					}

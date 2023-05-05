@@ -101,7 +101,7 @@ type C struct {
 	CustomFlags bool
 
 	// Perform the action of the command. If nil, calls FailWithUsage.
-	Run func(env *Env, args []string) error
+	Run func(env *Env) error
 
 	// If set, this will be called before flags are parsed, to give the command
 	// an opportunity to set flags.
@@ -235,5 +235,5 @@ func Run(env *Env, rawArgs []string) error {
 	if cmd.Run == nil {
 		return printShortHelp(env)
 	}
-	return cmd.Run(env, env.Args)
+	return cmd.Run(env)
 }

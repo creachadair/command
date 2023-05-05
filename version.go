@@ -22,7 +22,7 @@ func VersionCommand() *C {
 }
 
 // runVersion implements the built-in "version" command.
-func runVersion(env *Env, args []string) error {
+func runVersion(env *Env) error {
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {
 		return errors.New("no version information is available")
