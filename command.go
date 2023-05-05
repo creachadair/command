@@ -149,30 +149,33 @@ func (c *C) FindSubcommand(name string) *C {
 	return nil
 }
 
-// ErrUsage is returned from Run if the user requested help.
-var ErrUsage = errors.New("help requested")
+// ErrRequestHelp is returned from Run if the user requested help.
+var ErrRequestHelp = errors.New("help requested")
 
-type usageErr struct {
-	env *Env
-	msg string
+// UsageError is the concrete type of errors reported by the Usagef function,
+// indicating an error in the usage of a command.
+type UsageError struct {
+	Env     *Env
+	Message string
 }
 
-func (u usageErr) Error() string { return string(u.msg) }
+func (u UsageError) Error() string { return string(u.Message) }
 
 // Usagef returns a formatted error that describes a usage error for the
-// command whose environment is e.
+// command whose environment is e. The result has concrete type UsageError.
 func (e *Env) Usagef(msg string, args ...any) error {
-	return usageErr{env: e, msg: fmt.Sprintf(msg, args...)}
+	return UsageError{Env: e, Message: fmt.Sprintf(msg, args...)}
 }
 
 // RunOrFail behaves as Run, but prints a log message and calls os.Exit if the
 // command reports an error. If the command succeeds, RunOrFail returns.
 func RunOrFail(env *Env, rawArgs []string) {
 	if err := Run(env, rawArgs); err != nil {
-		if u, ok := err.(usageErr); ok {
-			log.Printf("Error: %s", u.msg)
-			u.env.Command.HelpInfo(false).WriteUsage(env)
-		} else if !errors.Is(err, ErrUsage) {
+		var uerr UsageError
+		if errors.As(err, &uerr) {
+			log.Printf("Error: %s", uerr.Message)
+			uerr.Env.Command.HelpInfo(false).WriteUsage(uerr.Env)
+		} else if !errors.Is(err, ErrRequestHelp) {
 			log.Printf("Error: %v", err)
 			os.Exit(1)
 		}
@@ -183,8 +186,9 @@ func RunOrFail(env *Env, rawArgs []string) {
 // Run runs the command given unprocessed arguments. If the command has flags
 // they are parsed and errors are handled before invoking the handler.
 //
-// Run writes usage information to ctx and returns ErrUsage if the command-line
-// usage was incorrect or the user requested -help via flags.
+// Run writes usage information to ctx and returns a UsageError if the
+// command-line usage was incorrect or ErrRequestHelp if the user requested
+// help via the --help flag.
 func Run(env *Env, rawArgs []string) error {
 	cmd := env.Command
 	env.Args = rawArgs
@@ -229,7 +233,7 @@ func Run(env *Env, rawArgs []string) error {
 			return printLongHelp(env.newChild(sub, rest), nil)
 		} else if cmd.Run == nil {
 			fmt.Fprintf(env, "Error: %s command %q not understood\n", cmd.Name, env.Args[0])
-			return ErrUsage
+			return ErrRequestHelp
 		}
 	}
 	if cmd.Run == nil {

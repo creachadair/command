@@ -31,8 +31,8 @@ func indent(first, prefix, text string) string {
 }
 
 // FailWithUsage is a run function that logs a usage message for the command
-// and returns ErrUsage.
-func FailWithUsage(env *Env, args []string) error {
+// and returns ErrRequestHelp.
+func FailWithUsage(env *Env) error {
 	env.Command.HelpInfo(false).WriteUsage(env)
-	return ErrUsage
+	return ErrRequestHelp
 }

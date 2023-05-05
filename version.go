@@ -39,5 +39,5 @@ func runVersion(env *Env) error {
 	}
 	fmt.Printf("%s built by %s at time %s rev %s\n",
 		filepath.Base(os.Args[0]), bi.GoVersion, time, rev)
-	return ErrUsage
+	return ErrRequestHelp
 }

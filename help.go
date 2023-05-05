@@ -166,13 +166,13 @@ func printLongHelp(env *Env, topics []HelpInfo) error {
 	ht := env.Command.HelpInfo(true)
 	ht.Topics = append(ht.Topics, topics...)
 	ht.WriteLong(env)
-	return ErrUsage
+	return ErrRequestHelp
 }
 
 // runShortHelp is a run function that prints synopsis help.
 func printShortHelp(env *Env) error {
 	env.Command.HelpInfo(false).WriteSynopsis(env)
-	return ErrUsage
+	return ErrRequestHelp
 }
 
 // RunHelp is a run function that implements long help.  It displays the
@@ -194,7 +194,7 @@ func RunHelp(env *Env) error {
 
 	// Otherwise the arguments request an unknown topic.
 	fmt.Fprintf(env, "Unknown help topic %q\n", strings.Join(env.Args, " "))
-	return ErrUsage
+	return ErrRequestHelp
 }
 
 func walkArgs(env *Env, args []string) *Env {
