@@ -175,6 +175,9 @@ func (e *Env) Usagef(msg string, args ...any) error {
 
 // RunOrFail behaves as Run, but prints a log message and calls os.Exit if the
 // command reports an error. If the command succeeds, RunOrFail returns.
+//
+// If a command reports a UsageError or ErrRequestHelp, the exit code is 2.
+// For any other error the exit code is 1.
 func RunOrFail(env *Env, rawArgs []string) {
 	if err := Run(env, rawArgs); err != nil {
 		var uerr UsageError
@@ -189,8 +192,8 @@ func RunOrFail(env *Env, rawArgs []string) {
 	}
 }
 
-// Run runs the command given unprocessed arguments. If the command has flags
-// they are parsed and errors are handled before invoking the handler.
+// Run traverses the given unprocessed arguments starting from env.
+// See the documentation for type C for a description of argument traversal.
 //
 // Run writes usage information to ctx and returns a UsageError if the
 // command-line usage was incorrect or ErrRequestHelp if the user requested
