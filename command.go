@@ -61,19 +61,25 @@ func (e *Env) Write(data []byte) (int, error) {
 
 // C carries the description and invocation function for a command.
 //
+// To process a command-line, the Run function walks through the arguments
+// starting from a root command to discover which command should be run and
+// what flags it requires. This argument traversal proceeds in phases:
+//
 // When a command is first discovered during argument traversal, its SetFlags
 // hook is executed (if defined) to prepare its flag set.  Then, unless the
-// CustomFlags option is true, the rest of the argument list is parsed by the
-// FlagSet to separate command-specific flags from further arguments and/or
+// CustomFlags option is true, the rest of the argument list is parsed using
+// the FlagSet to separate command-specific flags from further arguments and/or
 // subcommands.
 //
-// After flag processing and before attempting to explore subcommands, an Init
-// hook is called if one is defined. If Init reports an error it terminates
-// argument traversal, and that error is reported back to the user.
+// After flags are parsed and before attempting to explore subcommands, the
+// current command's Init hook is called (if defined). If Init reports an error
+// it terminates argument traversal, and that error is reported back to the
+// user.
 //
-// After initialization, if there are any remaining non-flag arguments, we
-// check for a matching subcommand.  If one is found, argument traversal recurs
-// to that subcommand to process the rest of the command-line.
+// Next,if there are any remaining non-flag arguments, Run checks whether the
+// current command has a subcommand matching the first argument.  If so
+// argument traversal recurs into that subcommand to process the rest of the
+// command-line.
 //
 // Otherwise, if the command defines a Run hook, that hook is executed with the
 // remaining unconsumed arguments. If no Run hook is defined, the traversal
