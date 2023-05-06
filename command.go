@@ -76,7 +76,7 @@ func (e *Env) Write(data []byte) (int, error) {
 // it terminates argument traversal, and that error is reported back to the
 // user.
 //
-// Next,if there are any remaining non-flag arguments, Run checks whether the
+// Next, if there are any remaining non-flag arguments, Run checks whether the
 // current command has a subcommand matching the first argument.  If so
 // argument traversal recurs into that subcommand to process the rest of the
 // command-line.
