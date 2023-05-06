@@ -9,7 +9,11 @@ import (
 )
 
 func Example() {
-	var noNewline bool
+	// The environment passed to a command can carry an arbitrary config value.
+	// Here we use a struct carrying information about options.
+	type options struct {
+		noNewline bool
+	}
 
 	root := &command.C{
 		Name: "example",
@@ -49,12 +53,15 @@ This help text is printed by the "help" subcommand.`,
 				Help:  "Concatenate the arguments with spaces and print to stdout.",
 
 				SetFlags: func(env *command.Env, fs *flag.FlagSet) {
-					fs.BoolVar(&noNewline, "n", false, "Do not print a trailing newline")
+					// Pull the config value out of the environment and attach a flag to it.
+					opt := env.Config.(*options)
+					fs.BoolVar(&opt.noNewline, "n", false, "Do not print a trailing newline")
 				},
 
 				Run: func(env *command.Env) error {
+					opt := env.Config.(*options)
 					fmt.Print(strings.Join(env.Args, " "))
-					if !noNewline {
+					if !opt.noNewline {
 						fmt.Println()
 					}
 					return nil
@@ -64,10 +71,13 @@ This help text is printed by the "help" subcommand.`,
 	}
 
 	// Demonstrate help output.
-	command.Run(root.NewEnv(nil), []string{"help"})
+	//
+	// Note that the argument to NewEnv is plumbed via the Config field of Env.
+	opt := new(options)
+	command.Run(root.NewEnv(opt), []string{"help"})
 
-	command.RunOrFail(root.NewEnv(nil), []string{"echo", "foo", "bar"})
-	command.RunOrFail(root.NewEnv(nil), []string{"echo", "-n", "baz"})
+	command.RunOrFail(root.NewEnv(opt), []string{"echo", "foo", "bar"})
+	command.RunOrFail(root.NewEnv(opt), []string{"echo", "-n", "baz"})
 	// Output:
 	// foo bar
 	// baz
