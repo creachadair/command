@@ -37,7 +37,8 @@ type Env struct {
 	Args    []string  // the unclaimed command-line arguments
 	Log     io.Writer // where to write diagnostic output (nil for os.Stderr)
 
-	ctx context.Context
+	ctx    context.Context
+	cancel context.CancelCauseFunc
 }
 
 // Context returns the context associated with e. If e does not have its own
@@ -52,9 +53,29 @@ func (e *Env) Context() context.Context {
 	return e.Parent.Context()
 }
 
+// Cancel cancels the context associated with e with the given cause.
+// If e does not have its own context, the cancellation is propagated to its
+// parent if one exists. If e has no parent and no context, Cancel does nothing
+// without error.
+func (e *Env) Cancel(cause error) {
+	if e.cancel != nil {
+		e.cancel(cause)
+	} else if e.Parent != nil {
+		e.Parent.Cancel(cause)
+	}
+}
+
 // WithContext sets the context of e to ctx and returns e.  If ctx == nil it
 // clears the context of e so that it efaults to its parent (see Context).
-func (e *Env) WithContext(ctx context.Context) *Env { e.ctx = ctx; return e }
+func (e *Env) WithContext(ctx context.Context) *Env {
+	if ctx == nil {
+		e.ctx = nil
+		e.cancel = nil
+	} else {
+		e.ctx, e.cancel = context.WithCancelCause(ctx)
+	}
+	return e
+}
 
 // output returns the log writer for c.
 func (e *Env) output() io.Writer {
