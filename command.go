@@ -17,6 +17,7 @@
 package command
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -35,7 +36,25 @@ type Env struct {
 	Config  any       // configuration data
 	Args    []string  // the unclaimed command-line arguments
 	Log     io.Writer // where to write diagnostic output (nil for os.Stderr)
+
+	ctx context.Context
 }
+
+// Context returns the context associated with e. If e does not have its own
+// context, it returns the context of its parent, or if e has no parent it
+// returns a new background context.
+func (e *Env) Context() context.Context {
+	if e.ctx != nil {
+		return e.ctx
+	} else if e.Parent == nil {
+		return context.Background()
+	}
+	return e.Parent.Context()
+}
+
+// WithContext sets the context of e to ctx and returns e.  If ctx == nil it
+// clears the context of e so that it efaults to its parent (see Context).
+func (e *Env) WithContext(ctx context.Context) *Env { e.ctx = ctx; return e }
 
 // output returns the log writer for c.
 func (e *Env) output() io.Writer {
