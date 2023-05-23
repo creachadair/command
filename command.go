@@ -65,9 +65,9 @@ func (e *Env) Cancel(cause error) {
 	}
 }
 
-// WithContext sets the context of e to ctx and returns e.  If ctx == nil it
+// SetContext sets the context of e to ctx and returns e.  If ctx == nil it
 // clears the context of e so that it efaults to its parent (see Context).
-func (e *Env) WithContext(ctx context.Context) *Env {
+func (e *Env) SetContext(ctx context.Context) *Env {
 	if ctx == nil {
 		e.ctx = nil
 		e.cancel = nil
