@@ -238,7 +238,8 @@ func RunOrFail(env *Env, rawArgs []string) {
 // Run writes usage information to ctx and returns a UsageError if the
 // command-line usage was incorrect or ErrRequestHelp if the user requested
 // help via the --help flag.
-func Run(env *Env, rawArgs []string) error {
+func Run(env *Env, rawArgs []string) (err error) {
+	defer env.Cancel(err)
 	cmd := env.Command
 	env.Args = rawArgs
 
