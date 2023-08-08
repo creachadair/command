@@ -13,6 +13,7 @@ func Example() {
 	// Here we use a struct carrying information about options.
 	type options struct {
 		noNewline bool
+		label     string
 	}
 
 	root := &command.C{
@@ -27,6 +28,12 @@ func Example() {
 
 This program demonstrates the use of the command package.
 This help text is printed by the "help" subcommand.`,
+
+		// This hook is called (when defined) to set up flags.
+		SetFlags: func(env *command.Env, fs *flag.FlagSet) {
+			opt := env.Config.(*options)
+			fs.StringVar(&opt.label, "label", "", "Label text")
+		},
 
 		// Note that the "example" command does not have a Run function.
 		// Executing it without a subcommand will print a help message and exit
@@ -56,10 +63,17 @@ This help text is printed by the "help" subcommand.`,
 					// Pull the config value out of the environment and attach a flag to it.
 					opt := env.Config.(*options)
 					fs.BoolVar(&opt.noNewline, "n", false, "Do not print a trailing newline")
+
+					// Merge in the flags from the enclosing environment (optional).
+					// This permits flags from the parent environment to be set later.
+					command.MergeFlags(env)
 				},
 
 				Run: func(env *command.Env) error {
 					opt := env.Config.(*options)
+					if opt.label != "" {
+						fmt.Printf("[%s] ", opt.label)
+					}
 					fmt.Print(strings.Join(env.Args, " "))
 					if !opt.noNewline {
 						fmt.Println()
@@ -73,12 +87,22 @@ This help text is printed by the "help" subcommand.`,
 	// Demonstrate help output.
 	//
 	// Note that the argument to NewEnv is plumbed via the Config field of Env.
-	opt := new(options)
-	command.Run(root.NewEnv(opt), []string{"help"})
+	var opt options
+	env := root.NewEnv(&opt)
 
-	command.RunOrFail(root.NewEnv(opt), []string{"echo", "foo", "bar"})
-	command.RunOrFail(root.NewEnv(opt), []string{"echo", "-n", "baz"})
+	command.Run(env, []string{"help"})
+
+	opt = options{} // reset settings
+	command.RunOrFail(env, []string{"echo", "foo", "bar"})
+	opt = options{}
+	command.RunOrFail(env, []string{"-label", "xyzzy", "echo", "bar"})
+	opt = options{}
+	command.RunOrFail(env, []string{"echo", "-label", "foo", "bar"})
+	opt = options{}
+	command.RunOrFail(env, []string{"echo", "-n", "baz"})
 	// Output:
 	// foo bar
+	// [xyzzy] bar
+	// [foo] bar
 	// baz
 }
