@@ -40,7 +40,7 @@ func FailWithUsage(env *Env) error {
 
 // MergeFlags merges the flags from the parents of env into the flag set for
 // the command of env itself. Flags are considered from the innermost to the
-// outermost environment in order, and Only flags not already defined are
+// outermost environment in order, and only flags not already defined are
 // merged into the ongoing set.
 //
 // Note: Because flags are parsed during argument traversal, the value seen by
