@@ -235,8 +235,8 @@ func RunOrFail(env *Env, rawArgs []string) {
 // Run traverses the given unprocessed arguments starting from env.
 // See the documentation for type C for a description of argument traversal.
 //
-// Run writes usage information to ctx and returns a UsageError if the
-// command-line usage was incorrect or ErrRequestHelp if the user requested
+// Run writes usage information to env and returns a UsageError if the
+// command-line usage was incorrect, or ErrRequestHelp if the user requested
 // help via the --help flag.
 func Run(env *Env, rawArgs []string) (err error) {
 	defer env.Cancel(err)
