@@ -66,8 +66,8 @@ func (c *C) HelpInfo(includeCommands bool) HelpInfo {
 		Synopsis: strings.SplitN(help, "\n", 2)[0],
 		Help:     help,
 	}
-	if c.Runnable() {
-		h.Usage = "Usage:\n\n" + indent(prefix, prefix, strings.Join(c.usageLines(), "\n"))
+	if u := c.usageLines(); len(u) != 0 {
+		h.Usage = "Usage:\n\n" + indent(prefix, prefix, strings.Join(u, "\n"))
 	}
 	if c.hasFlagsDefined() {
 		var buf bytes.Buffer
