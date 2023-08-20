@@ -44,7 +44,7 @@ func TestAdapt(t *testing.T) {
 			if err != nil && tc.ok {
 				t.Errorf("On args %+q: unexpected error: %v", tc.args, err)
 			} else if err == nil && !tc.ok {
-				t.Errorf("ON args %+q: unexpected success", tc.args)
+				t.Errorf("On args %+q: unexpected success", tc.args)
 			}
 		})
 	}
