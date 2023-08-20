@@ -46,7 +46,7 @@ func checkAdapt(fn any) (func(*Env) error, error) {
 	if fz, ok := fn.(func(*Env) error); ok {
 		return func(env *Env) error {
 			if len(env.Args) != 0 {
-				return env.Usagef("Extra arguments after command")
+				return env.Usagef("extra arguments after command: %q", env.Args)
 			}
 			return fz(env)
 		}, nil
@@ -90,7 +90,7 @@ func checkAdapt(fn any) (func(*Env) error, error) {
 	if hasRest {
 		return func(env *Env) error {
 			if len(env.Args) < argc-1 {
-				return env.Usagef("Wrong number of arguments: got %d, want at least %d", len(env.Args), argc-1)
+				return env.Usagef("wrong number of arguments: got %d, want at least %d", len(env.Args), argc-1)
 			}
 			args := append(packValues(env, argc-1), reflect.ValueOf(env.Args[argc-1:]))
 			return unpackError(call(args))
@@ -100,7 +100,7 @@ func checkAdapt(fn any) (func(*Env) error, error) {
 	// Case 3: A fixed-positional function.
 	return func(env *Env) error {
 		if len(env.Args) != argc {
-			return env.Usagef("Wrong number of arguments: got %d, want %d", len(env.Args), argc)
+			return env.Usagef("wrong number of arguments: got %d, want %d", len(env.Args), argc)
 		}
 		args := packValues(env, argc)
 		return unpackError(call(args))
