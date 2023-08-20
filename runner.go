@@ -103,7 +103,7 @@ func checkAdapt(fn any) (func(*Env) error, error) {
 			return env.Usagef("Wrong number of arguments: got %d, want %d", len(env.Args), argc)
 		}
 		args := packValues(env, argc)
-		return unpackError(fv.Call(args))
+		return unpackError(call(args))
 	}, nil
 }
 
