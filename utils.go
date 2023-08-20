@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+// Flags returns a SetFlags function that calls bind(fs, v) with the flag set
+// and the given value v.
+func Flags(bind func(*flag.FlagSet, any), v any) func(*Env, *flag.FlagSet) {
+	return func(_ *Env, fs *flag.FlagSet) { bind(fs, v) }
+}
+
 // usageLines parses and normalizes usage lines. The command name is stripped
 // from the head of each line if it is present.
 func (c *C) usageLines() []string {

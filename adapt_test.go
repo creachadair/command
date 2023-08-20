@@ -1,6 +1,7 @@
 package command_test
 
 import (
+	"flag"
 	"testing"
 
 	"github.com/creachadair/command"
@@ -73,5 +74,21 @@ func TestAdaptErrors(t *testing.T) {
 			command.Adapt(tc.fn)
 			t.Fatal("Adapt did not panic as it should")
 		})
+	}
+}
+
+func TestFlags(t *testing.T) {
+	var got int
+	c := &command.C{
+		SetFlags: command.Flags(func(fs *flag.FlagSet, v any) {
+			fs.IntVar(v.(*int), "test", 1, "Test flag")
+		}, &got),
+		Run: func(*command.Env) error { return nil },
+	}
+	if err := command.Run(c.NewEnv(nil), []string{"-test", "101", "ok"}); err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+	if got != 101 {
+		t.Errorf("After Run: got %v, want 101", got)
 	}
 }
