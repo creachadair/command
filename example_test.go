@@ -88,6 +88,20 @@ This help text is printed by the "help" subcommand.`,
 					return nil
 				},
 			},
+
+			{
+				Name:  "secret",
+				Usage: "args ...",
+				Help:  "A command that is hidden from help listings.",
+
+				// Exclude this command when listing subcommands.
+				Unlisted: true,
+
+				Run: func(env *command.Env) error {
+					fmt.Printf("easter-egg %s\n", strings.Join(env.Args, ", "))
+					return nil
+				},
+			},
 		},
 	}
 
@@ -98,21 +112,43 @@ This help text is printed by the "help" subcommand.`,
 	env := root.NewEnv(&opt)
 
 	command.Run(env, []string{"help"})
-
 	opt = options{} // reset settings
+
+	// Requesting help for an unlisted subcommand reports an error.
+	command.Run(env, []string{"help", "secret"})
+	opt = options{}
+
+	// But if you name the command explicitly with -help, you get help.
+	command.Run(env, []string{"secret", "-help"})
+	opt = options{}
+
+	// Execute a command with some arguments.
 	command.RunOrFail(env, []string{"echo", "foo", "bar"})
 	opt = options{}
+
+	// Execute a command with some flags and argujments.
 	command.RunOrFail(env, []string{"-label", "xyzzy", "echo", "bar"})
 	opt = options{}
+
+	// Merged flags can be used anywhere in their scope.
 	command.RunOrFail(env, []string{"echo", "-label", "foo", "bar"})
 	opt = options{}
+
+	// Private-marked flags still work as expected.
 	command.RunOrFail(env, []string{"echo", "-p", "25", "-label", "ok", "bar"})
 	opt = options{}
+
+	// Executing an unlisted command works.
+	command.RunOrFail(env, []string{"secret", "fort"})
+	opt = options{}
+
+	// An unmerged flag.
 	command.RunOrFail(env, []string{"echo", "-n", "baz"})
 	// Output:
 	// foo bar
 	// [xyzzy] bar
 	// [foo] bar
 	// [ok] <25> bar
+	// easter-egg fort
 	// baz
 }

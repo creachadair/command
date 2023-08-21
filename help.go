@@ -81,6 +81,9 @@ func (c *C) HelpInfo(includeCommands bool) HelpInfo {
 	}
 	if includeCommands {
 		for _, cmd := range c.Commands {
+			if cmd.Unlisted {
+				continue
+			}
 			sh := cmd.HelpInfo(false) // don't recur
 			if cmd.Runnable() || len(cmd.Commands) != 0 {
 				h.Commands = append(h.Commands, sh)
@@ -205,12 +208,14 @@ func RunHelp(env *Env) error {
 func walkArgs(env *Env, args []string) *Env {
 	cur := env
 
-	// Populate flags so that the help text will include them.
 	for _, arg := range args {
+		// If no corresponding subcommand is found, or if the subtree starting
+		// with that command is unlisted, report no match.
 		next := cur.Command.FindSubcommand(arg)
-		if next == nil {
+		if next == nil || next.Unlisted {
 			return nil
 		}
+		// Populate flags so that the help text will include them.
 		next.setFlags(cur, &next.Flags)
 		cur = cur.newChild(next, nil)
 	}
