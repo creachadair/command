@@ -14,6 +14,8 @@ func Example() {
 	type options struct {
 		noNewline bool
 		label     string
+		private   int
+		confirm   bool
 	}
 
 	root := &command.C{
@@ -33,6 +35,8 @@ This help text is printed by the "help" subcommand.`,
 		SetFlags: func(env *command.Env, fs *flag.FlagSet) {
 			opt := env.Config.(*options)
 			fs.StringVar(&opt.label, "label", "", "Label text")
+			fs.IntVar(&opt.private, "p", 0, "PRIVATE: Unadvertised flag")
+			fs.BoolVar(&opt.confirm, "y", false, "Confirm activity")
 		},
 
 		// Note that the "example" command does not have a Run function.
@@ -74,6 +78,9 @@ This help text is printed by the "help" subcommand.`,
 					if opt.label != "" {
 						fmt.Printf("[%s] ", opt.label)
 					}
+					if opt.private > 0 {
+						fmt.Printf("<%d> ", opt.private)
+					}
 					fmt.Print(strings.Join(env.Args, " "))
 					if !opt.noNewline {
 						fmt.Println()
@@ -99,10 +106,13 @@ This help text is printed by the "help" subcommand.`,
 	opt = options{}
 	command.RunOrFail(env, []string{"echo", "-label", "foo", "bar"})
 	opt = options{}
+	command.RunOrFail(env, []string{"echo", "-p", "25", "-label", "ok", "bar"})
+	opt = options{}
 	command.RunOrFail(env, []string{"echo", "-n", "baz"})
 	// Output:
 	// foo bar
 	// [xyzzy] bar
 	// [foo] bar
+	// [ok] <25> bar
 	// baz
 }

@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
 	"text/tabwriter"
 )
@@ -58,6 +59,9 @@ type HelpInfo struct {
 //
 // A command or subcommand with no Run function and no subcommands of its own
 // is considered a help topic, and listed separately.
+//
+// Flags whose usage message has the case-sensitive prefix "PRIVATE:" are
+// omitted from help listings.
 func (c *C) HelpInfo(includeCommands bool) HelpInfo {
 	help := strings.TrimSpace(c.Help)
 	prefix := "  " + c.Name + " "
@@ -71,9 +75,8 @@ func (c *C) HelpInfo(includeCommands bool) HelpInfo {
 	}
 	if c.hasFlagsDefined() {
 		var buf bytes.Buffer
-		fmt.Fprintln(&buf, "\nOptions:")
-		c.Flags.SetOutput(&buf)
-		c.Flags.PrintDefaults()
+		fmt.Fprintln(&buf, "Flags:")
+		writeFlagHelp(&buf, &c.Flags)
 		h.Flags = strings.TrimSpace(buf.String())
 	}
 	if includeCommands {
@@ -91,8 +94,10 @@ func (c *C) HelpInfo(includeCommands bool) HelpInfo {
 
 func (c *C) hasFlagsDefined() (ok bool) {
 	if !c.CustomFlags {
-		c.Flags.VisitAll(func(*flag.Flag) {
-			ok = true
+		c.Flags.VisitAll(func(f *flag.Flag) {
+			if !strings.HasPrefix(f.Usage, flagPrivatePrefix) {
+				ok = true
+			}
 		})
 	}
 	return
@@ -210,4 +215,86 @@ func walkArgs(env *Env, args []string) *Env {
 		cur = cur.newChild(next, nil)
 	}
 	return cur
+}
+
+const flagPrivatePrefix = "PRIVATE:"
+
+// writeFlagHelp writes descriptive help about the flags defined in fs to w.
+//
+// This is essentially a copy of flag.FlagSet.PrintDefault, with changes:
+//
+// - Long flag names (> 1 character) are prefixed by "--" instead of "-".
+// - Flags whose usage begins with "PRIVATE:" are omitted.
+func writeFlagHelp(w *bytes.Buffer, fs *flag.FlagSet) {
+	var errs []error
+	fs.VisitAll(func(f *flag.Flag) {
+		if strings.HasPrefix(f.Usage, flagPrivatePrefix) {
+			return // don't display this flag
+		}
+		tag := "  -"
+		if len(f.Name) > 1 {
+			tag = " --"
+		}
+		fmt.Fprint(w, tag, f.Name)
+		name, usage := flag.UnquoteUsage(f)
+		if name != "" {
+			fmt.Fprint(w, " ", name)
+		}
+		if len(f.Name) == 1 && name == "" {
+			w.WriteString("\t")
+		} else {
+			w.WriteString("\n    \t")
+		}
+		w.WriteString(strings.ReplaceAll(usage, "\n", "\n    \t"))
+
+		if ok, err := isZeroValue(f, f.DefValue); err != nil {
+			errs = append(errs, err)
+		} else if !ok {
+			if isStringish(f) {
+				fmt.Fprintf(w, " (default %q)", f.DefValue)
+			} else {
+				fmt.Fprintf(w, " (default %v)", f.DefValue)
+			}
+		}
+		w.WriteString("\n")
+	})
+	if len(errs) != 0 {
+		for _, err := range errs {
+			fmt.Fprint(w, "\n", err)
+		}
+	}
+}
+
+// isStringish reports whether v has underlying string type.
+func isStringish(f *flag.Flag) bool {
+	t := reflect.TypeOf(f.Value)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.Kind() == reflect.String
+}
+
+// isZeroValue reports whether the string represents the zero value for a
+// flag. Copied with minor changes frpm src/flag/flag.go.
+func isZeroValue(f *flag.Flag, value string) (ok bool, err error) {
+	// Build a zero value of the flag's Value type, and see if the result of
+	// calling its String method equals the value passed in.  This works unless
+	// the Value type is itself an interface type.
+	typ := reflect.TypeOf(f.Value)
+	var z reflect.Value
+	if typ.Kind() == reflect.Pointer {
+		typ = typ.Elem()
+		z = reflect.New(typ)
+	} else {
+		z = reflect.Zero(typ)
+	}
+	// Catch panics calling the String method, which shouldn't prevent the
+	// usage message from being printed, but that we should report to the
+	// user so that they know to fix their code.
+	defer func() {
+		if e := recover(); e != nil {
+			err = fmt.Errorf("panic calling String method on zero %v for flag %s: %v", typ, f.Name, e)
+		}
+	}()
+	return value == z.Interface().(flag.Value).String(), nil
 }

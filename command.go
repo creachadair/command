@@ -142,7 +142,7 @@ type C struct {
 	// Init or Run is called unless CustomFlags is true.
 	Flags flag.FlagSet
 
-	// If false, Flags is used to parse the argument list.  Otherwise, the Run
+	// If false, Flags is used to parse the argument list.  Otherwise, the Init
 	// function is responsible for parsing flags from the argument list.
 	CustomFlags bool
 
