@@ -146,6 +146,10 @@ type C struct {
 	// function is responsible for parsing flags from the argument list.
 	CustomFlags bool
 
+	// If true, exclude this command from help listings unless it is explicitly
+	// named and requested.
+	Unlisted bool
+
 	// Perform the action of the command. If nil, calls FailWithUsage.
 	Run func(env *Env) error
 
