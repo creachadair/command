@@ -24,6 +24,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 // Env is the environment passed to the Run function of a command.
@@ -39,6 +40,7 @@ type Env struct {
 
 	ctx    context.Context
 	cancel context.CancelCauseFunc
+	merge  bool
 }
 
 // Context returns the context associated with e. If e does not have its own
@@ -77,6 +79,32 @@ func (e *Env) SetContext(ctx context.Context) *Env {
 	return e
 }
 
+// MergeFlags sets the flag merge option for e and returns e.
+//
+// Setting this option true modifies the flag parsing algorithm for commands
+// dispatched through e to "merge" flags matching the current command from the
+// remainder of the argument list. The default is false.
+//
+// Merging allows flags for a command to be defined later in the command-line,
+// after subcommands and their own flags.  For example, given a command "one"
+// with flag -A and a subcommand "two" with flag -B: With merging false, the
+// following arguments report an error.
+//
+//	one two -B 2 -A 1
+//
+// This is because the default parsing algorithm (without merge) stops parsing
+// flags for "one" at the first non-flag argument, and "two" does not recognize
+// the flag -A. With merging enabled the argument list succeeds, because the
+// parser "looks ahead", treating it as if the caller had written:
+//
+//	one -A 1 -- two -B 2
+//
+// Setting the MergeFlags option also applies to all the descendants of e
+// unless the command's Init callback changes the setting.  Note that if a
+// subcommand defines a flag with the same name as its ancestor, the ancstor
+// will shadow the flag for the descendant.
+func (e *Env) MergeFlags(merge bool) *Env { e.merge = merge; return e }
+
 // output returns the log writer for c.
 func (e *Env) output() io.Writer {
 	if e.Log != nil {
@@ -97,6 +125,43 @@ func (e *Env) newChild(cmd *C, cargs []string) *Env {
 // designated output stream, allowing the context to be sent diagnostic output.
 func (e *Env) Write(data []byte) (int, error) {
 	return e.output().Write(data)
+}
+
+// parseFlags parses flags from rawArgs using the flag set from env.Command.
+// If parsing succeeds, it updates env.Args.
+// If the command specifies custom flags, this is a no-op without error.
+func (e *Env) parseFlags(rawArgs []string) error {
+	if e.Command.CustomFlags {
+		return nil
+	}
+	e.Command.Flags.Usage = func() {}
+	e.Command.Flags.SetOutput(io.Discard)
+	toParse := rawArgs
+	if e.merge {
+		flags, free, err := splitFlags(&e.Command.Flags, rawArgs)
+		if err != nil {
+			return err
+		}
+		toParse = joinArgs(flags, free)
+	}
+	err := e.Command.Flags.Parse(toParse)
+	if errors.Is(err, flag.ErrHelp) {
+		return printLongHelp(e, nil)
+	} else if err != nil {
+		return err
+	}
+	e.Args = e.Command.Flags.Args()
+	return nil
+}
+
+func (e *Env) startsWithFlag() bool {
+	if len(e.Args) == 0 {
+		return false
+	} else if e.Args[0] == "--" {
+		e.Args = e.Args[1:]
+		return false
+	}
+	return strings.HasPrefix(e.Args[0], "-") && e.Args[0] != "-"
 }
 
 // C carries the description and invocation function for a command.
@@ -227,7 +292,7 @@ func RunOrFail(env *Env, rawArgs []string) {
 		var uerr UsageError
 		if errors.As(err, &uerr) {
 			log.Printf("Error: %s", uerr.Message)
-			uerr.Env.Command.HelpInfo(false).WriteUsage(uerr.Env)
+			uerr.Env.Command.HelpInfo(0).WriteUsage(uerr.Env)
 		} else if !errors.Is(err, ErrRequestHelp) {
 			log.Printf("Error: %v", err)
 			os.Exit(1)
@@ -248,23 +313,12 @@ func Run(env *Env, rawArgs []string) (err error) {
 	env.Args = rawArgs
 
 	// If the command defines a flag setter, invoke it.
-	if cmd.SetFlags != nil && !cmd.isFlagSet {
-		cmd.SetFlags(env, &cmd.Flags)
-		cmd.isFlagSet = true
-	}
+	cmd.setFlags(env, &cmd.Flags)
 
 	// Unless this command does custom flag parsing, parse the arguments and
 	// check for errors before passing control to the handler.
-	if !cmd.CustomFlags {
-		cmd.Flags.Usage = func() {}
-		cmd.Flags.SetOutput(io.Discard)
-		err := cmd.Flags.Parse(rawArgs)
-		if err == flag.ErrHelp {
-			return printLongHelp(env, nil)
-		} else if err != nil {
-			return err
-		}
-		env.Args = cmd.Flags.Args()
+	if err := env.parseFlags(rawArgs); err != nil {
+		return err
 	}
 
 	if cmd.Init != nil {
@@ -292,6 +346,8 @@ func Run(env *Env, rawArgs []string) (err error) {
 	}
 	if cmd.Run == nil {
 		return printShortHelp(env)
+	} else if !cmd.CustomFlags && env.startsWithFlag() {
+		return fmt.Errorf("flag provided but not defined: %s", env.Args[0])
 	}
 	return cmd.Run(env)
 }

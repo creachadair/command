@@ -4,6 +4,7 @@ package command
 
 import (
 	"flag"
+	"fmt"
 	"strings"
 )
 
@@ -40,7 +41,7 @@ func indent(first, prefix, text string) string {
 // FailWithUsage is a run function that logs a usage message for the command
 // and returns ErrRequestHelp.
 func FailWithUsage(env *Env) error {
-	env.Command.HelpInfo(false).WriteUsage(env)
+	env.Command.HelpInfo(0).WriteUsage(env)
 	return ErrRequestHelp
 }
 
@@ -67,4 +68,73 @@ func MergeFlags(env *Env) {
 			seen[f.Name] = struct{}{}
 		})
 	}
+}
+
+// splitFlags constructs two slices from args, the first containing all flags
+// and their arguments matched by fs, the second containing all the other free
+// arguments. Flag values are not parsed. Flag-shaped strings not matched by fs
+// are treated as free arguments.  An error is reported if a flag lacks its
+// argument.
+func splitFlags(fs *flag.FlagSet, args []string) (flags, free []string, _ error) {
+	var wantArg bool
+	for i, s := range args {
+		// Terminate flag processing from an explicit "--"
+		// Include the split point in the free argument list so that the caller
+		// can distinguish unclaimed flags.
+		if s == "--" {
+			free = append(free, args[i:]...)
+			return flags, free, nil
+		}
+
+		// Case 1: The previous argument is a flag that needs a value.
+		if wantArg {
+			flags = append(flags, s)
+			wantArg = false
+			continue
+		}
+
+		// Case 2: Flag-shaped arguments (-x, --x).
+		if rest, ok := strings.CutPrefix(s, "-"); ok && rest != "" {
+			rest = strings.TrimPrefix(rest, "-") // accept -name or --name
+
+			// Some flags may carry their own values (e.g., --name=value).
+			// Otherwise, anything that isn't a Boolean flag requires an argument.
+			name, _, ok := strings.Cut(rest, "=")
+			if f := fs.Lookup(name); f != nil {
+				// This is a flag belonging to this flag set.
+				flags = append(flags, s)
+				if !isBoolFlag(f) && !ok {
+					wantArg = true
+				}
+			} else {
+				// This may be a flag for a downstream flag set; for now
+				// treat it as a free argument.
+				free = append(free, s)
+			}
+			continue
+		}
+
+		// Case 3: Free arguments (including "-").
+		free = append(free, s)
+	}
+	if wantArg {
+		return nil, nil, fmt.Errorf("missing value for flag %q", flags[len(flags)-1])
+	}
+	return flags, free, nil
+}
+
+func isBoolFlag(f *flag.Flag) bool {
+	v, ok := f.Value.(interface {
+		IsBoolFlag() bool
+	})
+	return ok && v.IsBoolFlag()
+}
+
+func joinArgs(a, b []string) []string {
+	if len(a) == 0 {
+		return b
+	} else if len(b) == 0 {
+		return a
+	}
+	return append(append(a, "--"), b...)
 }

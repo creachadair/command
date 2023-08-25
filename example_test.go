@@ -3,6 +3,7 @@ package command_test
 import (
 	"flag"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/creachadair/command"
@@ -110,6 +111,7 @@ This help text is printed by the "help" subcommand.`,
 	// Note that the argument to NewEnv is plumbed via the Config field of Env.
 	var opt options
 	env := root.NewEnv(&opt)
+	env.Log = io.Discard
 
 	command.Run(env, []string{"help"})
 	opt = options{} // reset settings

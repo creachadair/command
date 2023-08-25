@@ -54,15 +54,27 @@ type HelpInfo struct {
 	Topics []HelpInfo
 }
 
-// HelpInfo returns help details for c. If includeCommands is true and c has
-// subcommands, their help is also generated.
+// HelpFlags is a bit mask of flags for the HelpInfo method.
+type HelpFlags int
+
+func (h HelpFlags) wantCommands() bool     { return h&IncludeCommands != 0 }
+func (h HelpFlags) wantUnlisted() bool     { return h&IncludeUnlisted != 0 }
+func (h HelpFlags) wantPrivateFlags() bool { return h&IncludePrivateFlags != 0 }
+
+const (
+	IncludeCommands     HelpFlags = 1 << iota // include subcommands and help topics
+	IncludeUnlisted                           // include unlisted subcommands
+	IncludePrivateFlags                       // include private (hidden) flags
+)
+
+// HelpInfo returns help details for c.
 //
 // A command or subcommand with no Run function and no subcommands of its own
 // is considered a help topic, and listed separately.
 //
 // Flags whose usage message has the case-sensitive prefix "PRIVATE:" are
 // omitted from help listings.
-func (c *C) HelpInfo(includeCommands bool) HelpInfo {
+func (c *C) HelpInfo(flags HelpFlags) HelpInfo {
 	help := strings.TrimSpace(c.Help)
 	prefix := "  " + c.Name + " "
 	h := HelpInfo{
@@ -73,18 +85,18 @@ func (c *C) HelpInfo(includeCommands bool) HelpInfo {
 	if u := c.usageLines(); len(u) != 0 {
 		h.Usage = "Usage:\n\n" + indent(prefix, prefix, strings.Join(u, "\n"))
 	}
-	if c.hasFlagsDefined() {
+	if c.hasFlagsDefined(flags.wantPrivateFlags()) {
 		var buf bytes.Buffer
 		fmt.Fprintln(&buf, "Flags:")
-		writeFlagHelp(&buf, &c.Flags)
+		writeFlagHelp(&buf, &c.Flags, flags.wantPrivateFlags())
 		h.Flags = strings.TrimSpace(buf.String())
 	}
-	if includeCommands {
+	if flags.wantCommands() {
 		for _, cmd := range c.Commands {
-			if cmd.Unlisted {
+			if cmd.Unlisted && !flags.wantUnlisted() {
 				continue
 			}
-			sh := cmd.HelpInfo(false) // don't recur
+			sh := cmd.HelpInfo(flags &^ IncludeCommands) // don't recur
 			if cmd.Runnable() || len(cmd.Commands) != 0 {
 				h.Commands = append(h.Commands, sh)
 			} else {
@@ -95,10 +107,10 @@ func (c *C) HelpInfo(includeCommands bool) HelpInfo {
 	return h
 }
 
-func (c *C) hasFlagsDefined() (ok bool) {
+func (c *C) hasFlagsDefined(wantPrivate bool) (ok bool) {
 	if !c.CustomFlags {
 		c.Flags.VisitAll(func(f *flag.Flag) {
-			if !strings.HasPrefix(f.Usage, flagPrivatePrefix) {
+			if !strings.HasPrefix(f.Usage, flagPrivatePrefix) || wantPrivate {
 				ok = true
 			}
 		})
@@ -171,7 +183,7 @@ func writeTopics(w io.Writer, base, label string, topics []HelpInfo) {
 // runLongHelp is a run function that prints long-form help.
 // The topics are additional help topics to include in the output.
 func printLongHelp(env *Env, topics []HelpInfo) error {
-	ht := env.Command.HelpInfo(true)
+	ht := env.Command.HelpInfo(IncludeCommands)
 	ht.Topics = append(ht.Topics, topics...)
 	ht.WriteLong(env)
 	return ErrRequestHelp
@@ -179,7 +191,7 @@ func printLongHelp(env *Env, topics []HelpInfo) error {
 
 // runShortHelp is a run function that prints synopsis help.
 func printShortHelp(env *Env) error {
-	env.Command.HelpInfo(false).WriteSynopsis(env)
+	env.Command.HelpInfo(0).WriteSynopsis(env)
 	return ErrRequestHelp
 }
 
@@ -190,7 +202,7 @@ func RunHelp(env *Env) error {
 	target := walkArgs(env.Parent, env.Args)
 	if target == env.Parent {
 		// For the parent, include the help command's own topics.
-		return printLongHelp(target, env.Command.HelpInfo(true).Topics)
+		return printLongHelp(target, env.Command.HelpInfo(IncludeCommands).Topics)
 	} else if target != nil {
 		return printLongHelp(target, nil)
 	}
@@ -230,11 +242,14 @@ const flagPrivatePrefix = "PRIVATE:"
 //
 // - Long flag names (> 1 character) are prefixed by "--" instead of "-".
 // - Flags whose usage begins with "PRIVATE:" are omitted.
-func writeFlagHelp(w *bytes.Buffer, fs *flag.FlagSet) {
+func writeFlagHelp(w *bytes.Buffer, fs *flag.FlagSet, wantPrivate bool) {
 	var errs []error
 	fs.VisitAll(func(f *flag.Flag) {
-		if strings.HasPrefix(f.Usage, flagPrivatePrefix) {
-			return // don't display this flag
+		if u, ok := strings.CutPrefix(f.Usage, flagPrivatePrefix); ok {
+			if !wantPrivate {
+				return // don't display this flag
+			}
+			f.Usage = strings.TrimPrefix(u, " ")
 		}
 		tag := "  -"
 		if len(f.Name) > 1 {
