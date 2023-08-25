@@ -38,6 +38,7 @@ This help text is printed by the "help" subcommand.`,
 			fs.StringVar(&opt.label, "label", "", "Label text")
 			fs.IntVar(&opt.private, "p", 0, "PRIVATE: Unadvertised flag")
 			fs.BoolVar(&opt.confirm, "y", false, "Confirm activity")
+			env.MergeFlags(true)
 		},
 
 		// Note that the "example" command does not have a Run function.
@@ -68,10 +69,6 @@ This help text is printed by the "help" subcommand.`,
 					// Pull the config value out of the environment and attach a flag to it.
 					opt := env.Config.(*options)
 					fs.BoolVar(&opt.noNewline, "n", false, "Do not print a trailing newline")
-
-					// Merge in the flags from the enclosing environment (optional).
-					// This permits flags from the parent environment to be set later.
-					command.MergeFlags(env)
 				},
 
 				Run: func(env *command.Env) error {
