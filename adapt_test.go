@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/creachadair/command"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestAdapt(t *testing.T) {
@@ -78,17 +79,27 @@ func TestAdaptErrors(t *testing.T) {
 }
 
 func TestFlags(t *testing.T) {
-	var got int
+	type pair struct {
+		Name  string
+		Value int
+	}
+
+	f1, f2 := pair{Name: "f1"}, pair{Name: "f2"}
 	c := &command.C{
 		SetFlags: command.Flags(func(fs *flag.FlagSet, v any) {
-			fs.IntVar(v.(*int), "test", 1, "Test flag")
-		}, &got),
+			p := v.(*pair)
+			fs.IntVar(&p.Value, p.Name, 1, "Test flag "+p.Name)
+		}, &f1, &f2),
 		Run: func(*command.Env) error { return nil },
 	}
-	if err := command.Run(c.NewEnv(nil), []string{"-test", "101", "ok"}); err != nil {
+	if err := command.Run(c.NewEnv(nil), []string{"-f1", "101", "-f2=102", "ok"}); err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
-	if got != 101 {
-		t.Errorf("After Run: got %v, want 101", got)
+
+	if diff := cmp.Diff(f1, pair{Name: "f1", Value: 101}); diff != "" {
+		t.Errorf("After Run f1 (-got, +want):\n%s", diff)
+	}
+	if diff := cmp.Diff(f2, pair{Name: "f2", Value: 102}); diff != "" {
+		t.Errorf("After Run f2 (-got, +want):\n%s", diff)
 	}
 }
