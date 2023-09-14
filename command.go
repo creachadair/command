@@ -24,7 +24,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strings"
 )
 
 // Env is the environment passed to the Run function of a command.
@@ -152,16 +151,6 @@ func (e *Env) parseFlags(rawArgs []string) error {
 	}
 	e.Args = e.Command.Flags.Args()
 	return nil
-}
-
-func (e *Env) startsWithFlag() bool {
-	if len(e.Args) == 0 {
-		return false
-	} else if e.Args[0] == "--" {
-		e.Args = e.Args[1:]
-		return false
-	}
-	return strings.HasPrefix(e.Args[0], "-") && e.Args[0] != "-"
 }
 
 // C carries the description and invocation function for a command.
@@ -346,8 +335,6 @@ func Run(env *Env, rawArgs []string) (err error) {
 	}
 	if cmd.Run == nil {
 		return printShortHelp(env)
-	} else if !cmd.CustomFlags && env.startsWithFlag() {
-		return fmt.Errorf("flag provided but not defined: %s", env.Args[0])
 	}
 	return cmd.Run(env)
 }

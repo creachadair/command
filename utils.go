@@ -56,15 +56,7 @@ func FailWithUsage(env *Env) error {
 // argument.
 func splitFlags(fs *flag.FlagSet, args []string) (flags, free []string, _ error) {
 	var wantArg bool
-	for i, s := range args {
-		// Terminate flag processing from an explicit "--"
-		// Include the split point in the free argument list so that the caller
-		// can distinguish unclaimed flags.
-		if s == "--" {
-			free = append(free, args[i:]...)
-			return flags, free, nil
-		}
-
+	for _, s := range args {
 		// Case 1: The previous argument is a flag that needs a value.
 		if wantArg {
 			flags = append(flags, s)
@@ -72,8 +64,14 @@ func splitFlags(fs *flag.FlagSet, args []string) (flags, free []string, _ error)
 			continue
 		}
 
+		// Treat "-" and "--" as free arguments to simplify the logic below.
+		if s == "-" || s == "--" {
+			free = append(free, s)
+			continue
+		}
+
 		// Case 2: Flag-shaped arguments (-x, --x).
-		if rest, ok := strings.CutPrefix(s, "-"); ok && rest != "" {
+		if rest, ok := strings.CutPrefix(s, "-"); ok {
 			rest = strings.TrimPrefix(rest, "-") // accept -name or --name
 
 			// Some flags may carry their own values (e.g., --name=value).
@@ -93,7 +91,7 @@ func splitFlags(fs *flag.FlagSet, args []string) (flags, free []string, _ error)
 			continue
 		}
 
-		// Case 3: Free arguments (including "-").
+		// Case 3: Free arguments.
 		free = append(free, s)
 	}
 	if wantArg {
@@ -109,11 +107,4 @@ func isBoolFlag(f *flag.Flag) bool {
 	return ok && v.IsBoolFlag()
 }
 
-func joinArgs(a, b []string) []string {
-	if len(a) == 0 {
-		return b
-	} else if len(b) == 0 {
-		return a
-	}
-	return append(append(a, "--"), b...)
-}
+func joinArgs(a, b []string) []string { return append(a, b...) }

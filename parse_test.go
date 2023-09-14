@@ -3,6 +3,7 @@ package command_test
 import (
 	"flag"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 
@@ -118,5 +119,55 @@ func TestParse(t *testing.T) {
 				t.Errorf("Run: unexpected error: %v", err)
 			}
 		})
+	}
+}
+
+func TestHelpFlag(t *testing.T) {
+	// A --help flag should be recognized even if it is not defined by the flag
+	// set, as long as it occurs before the non-flag arguments.
+	root := &command.C{
+		Name: "cmd",
+		Commands: []*command.C{{
+			Name: "sub",
+			SetFlags: func(_ *command.Env, fs *flag.FlagSet) {
+				fs.Bool("foo", false, "A flag for testing")
+			},
+			Run: func(env *command.Env) error { return nil },
+		}},
+	}
+	tests := []struct {
+		args    string
+		wantErr string
+	}{
+		{"sub", ""},
+		{"sub - --help", ""},  // free args: - --help
+		{"sub -- --help", ""}, // free args: --help
+		{"sub -help", "help requested"},
+		{"sub a b -help", "help requested"},
+		{"sub --help", "help requested"},
+		{"sub --foo -help", "help requested"},
+		{"sub -foo --help", "help requested"},
+		{"sub -help", "help requested"},
+		{"sub --help", "help requested"},
+		{"sub --foo -help", "help requested"},
+		{"sub -foo --help", "help requested"},
+		{"sub -foo -bar", "not defined"},
+		{"sub -foo -help -bar", "help requested"},
+		{"sub -foo -bar", "not defined"},
+		{"sub -foo --help x y -bar", "help requested"},
+		{"sub -foo -- -bar", ""}, // free args: -bar
+	}
+	for _, tc := range tests {
+		for _, ok := range []bool{false, true} {
+			env := root.NewEnv(nil).MergeFlags(ok)
+			env.Log = io.Discard
+			args := strings.Fields(tc.args)
+			err := command.Run(env, args)
+			if tc.wantErr == "" && err != nil {
+				t.Errorf("Run merge=%v %q: unexpected error: %v", ok, tc.args, err)
+			} else if err != nil && !strings.Contains(err.Error(), tc.wantErr) {
+				t.Errorf("Run merge=%v %q: got error %v, want %q", ok, tc.args, err, tc.wantErr)
+			}
+		}
 	}
 }
