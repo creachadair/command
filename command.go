@@ -40,6 +40,7 @@ type Env struct {
 	ctx    context.Context
 	cancel context.CancelCauseFunc
 	merge  bool
+	hflag  HelpFlags // default: no unlisted commands, no private flags
 }
 
 // Context returns the context associated with e. If e does not have its own
@@ -103,6 +104,12 @@ func (e *Env) SetContext(ctx context.Context) *Env {
 // subcommand defines a flag with the same name as its ancestor, the ancstor
 // will shadow the flag for the descendant.
 func (e *Env) MergeFlags(merge bool) *Env { e.merge = merge; return e }
+
+// HelpFlags sets the base help flags for e and returns e.
+//
+// By default, help listings do not include unlisted commands or private flags.
+// This permits the caller to override the default help printing rules.
+func (e *Env) HelpFlags(f HelpFlags) *Env { e.hflag = (f &^ IncludeCommands); return e }
 
 // output returns the log writer for c.
 func (e *Env) output() io.Writer {
@@ -281,7 +288,7 @@ func RunOrFail(env *Env, rawArgs []string) {
 		var uerr UsageError
 		if errors.As(err, &uerr) {
 			log.Printf("Error: %s", uerr.Message)
-			uerr.Env.Command.HelpInfo(0).WriteUsage(uerr.Env)
+			uerr.Env.Command.HelpInfo(env.hflag).WriteUsage(uerr.Env)
 		} else if !errors.Is(err, ErrRequestHelp) {
 			log.Printf("Error: %v", err)
 			os.Exit(1)

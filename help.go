@@ -183,7 +183,7 @@ func writeTopics(w io.Writer, base, label string, topics []HelpInfo) {
 // runLongHelp is a run function that prints long-form help.
 // The topics are additional help topics to include in the output.
 func printLongHelp(env *Env, topics []HelpInfo) error {
-	ht := env.Command.HelpInfo(IncludeCommands)
+	ht := env.Command.HelpInfo(env.hflag | IncludeCommands)
 	ht.Topics = append(ht.Topics, topics...)
 	ht.WriteLong(env)
 	return ErrRequestHelp
@@ -191,7 +191,7 @@ func printLongHelp(env *Env, topics []HelpInfo) error {
 
 // runShortHelp is a run function that prints synopsis help.
 func printShortHelp(env *Env) error {
-	env.Command.HelpInfo(0).WriteSynopsis(env)
+	env.Command.HelpInfo(env.hflag).WriteSynopsis(env)
 	return ErrRequestHelp
 }
 
@@ -202,7 +202,7 @@ func RunHelp(env *Env) error {
 	target := walkArgs(env.Parent, env.Args)
 	if target == env.Parent {
 		// For the parent, include the help command's own topics.
-		return printLongHelp(target, env.Command.HelpInfo(IncludeCommands).Topics)
+		return printLongHelp(target, env.Command.HelpInfo(env.hflag|IncludeCommands).Topics)
 	} else if target != nil {
 		return printLongHelp(target, nil)
 	}
