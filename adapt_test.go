@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/creachadair/command"
+	"github.com/creachadair/mtest"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -67,13 +68,7 @@ func TestAdaptErrors(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			defer func() {
-				if v := recover(); v != nil {
-					t.Logf("Recovered panic (OK): %v", v)
-				}
-			}()
-			command.Adapt(tc.fn)
-			t.Fatal("Adapt did not panic as it should")
+			mtest.MustPanic(t, func() { command.Adapt(tc.fn) })
 		})
 	}
 }
