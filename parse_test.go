@@ -142,19 +142,14 @@ func TestHelpFlag(t *testing.T) {
 		{"sub", ""},
 		{"sub - --help", ""},  // free args: - --help
 		{"sub -- --help", ""}, // free args: --help
-		{"sub -help", "help requested"},
-		{"sub a b -help", "help requested"},
-		{"sub --help", "help requested"},
 		{"sub --foo -help", "help requested"},
-		{"sub -foo --help", "help requested"},
-		{"sub -help", "help requested"},
 		{"sub --help", "help requested"},
-		{"sub --foo -help", "help requested"},
+		{"sub -foo --help x y -bar", "help requested"},
 		{"sub -foo --help", "help requested"},
 		{"sub -foo -bar", "not defined"},
 		{"sub -foo -help -bar", "help requested"},
-		{"sub -foo -bar", "not defined"},
-		{"sub -foo --help x y -bar", "help requested"},
+		{"sub -help", "help requested"},
+		{"sub a b -help", "help requested"},
 		{"sub -foo -- -bar", ""}, // free args: -bar
 	}
 	for _, tc := range tests {
