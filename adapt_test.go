@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/creachadair/command"
-	"github.com/creachadair/mtest"
+	"github.com/creachadair/mds/mtest"
 	"github.com/google/go-cmp/cmp"
 )
 
