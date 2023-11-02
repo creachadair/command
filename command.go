@@ -5,8 +5,8 @@
 //
 // # Overview
 //
-// The command package allows a program to easily process a simple language of
-// named commands, each of which may have its own flags, arguments, and nested
+// The command package helps a program to process a language of named
+// commands, each of which may have its own flags, arguments, and nested
 // subcommands.  A command is represented by a *command.C value carrying help
 // text, usage summaries, and a function to execute its behavior.
 //
