@@ -82,7 +82,7 @@ func (c *C) HelpInfo(flags HelpFlags) HelpInfo {
 		Synopsis: strings.SplitN(help, "\n", 2)[0],
 		Help:     help,
 	}
-	if u := c.usageLines(); len(u) != 0 {
+	if u := c.usageLines(flags); len(u) != 0 {
 		h.Usage = "Usage:\n\n" + indent(prefix, prefix, strings.Join(u, "\n"))
 	}
 	if c.hasFlagsDefined(flags.wantPrivateFlags()) {
