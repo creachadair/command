@@ -20,7 +20,7 @@ func Flags(bind func(*flag.FlagSet, any), vs ...any) func(*Env, *flag.FlagSet) {
 
 // usageLines parses and normalizes usage lines. The command name is stripped
 // from the head of each line if it is present.
-func (c *C) usageLines() []string {
+func (c *C) usageLines(flags HelpFlags) []string {
 	var lines []string
 	prefix := c.Name + " "
 	for _, line := range strings.Split(c.Usage, "\n") {
@@ -32,6 +32,9 @@ func (c *C) usageLines() []string {
 		} else {
 			lines = append(lines, strings.TrimPrefix(line, prefix))
 		}
+	}
+	if len(lines) == 0 && c.hasFlagsDefined(flags.wantPrivateFlags()) {
+		return []string{"[flags]"}
 	}
 	return lines
 }
