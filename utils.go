@@ -33,10 +33,28 @@ func (c *C) usageLines(flags HelpFlags) []string {
 			lines = append(lines, strings.TrimPrefix(line, prefix))
 		}
 	}
-	if len(lines) == 0 && c.hasFlagsDefined(flags.wantPrivateFlags()) {
-		return []string{"[flags]"}
+	if len(lines) == 0 {
+		var tag string
+		if c.hasFlagsDefined(flags.wantPrivateFlags()) {
+			tag = "[flags]"
+		}
+		if len(c.Commands) != 0 {
+			tag = joinSpace(tag, "<command>")
+		}
+		if tag != "" {
+			return []string{tag}
+		}
 	}
 	return lines
+}
+
+func joinSpace(a, b string) string {
+	if a == "" {
+		return b
+	} else if b == "" {
+		return a
+	}
+	return a + " " + b
 }
 
 // indent returns text indented as specified; first is prepended to the first
