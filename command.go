@@ -192,6 +192,11 @@ type C struct {
 
 	// A terse usage summary for the command. Multiple lines are allowed.
 	// Each line should be self-contained for a particular usage sense.
+	//
+	// The name of the command will be automatically inserted at the front of
+	// each usage line if it is not present. If no usage is defined, the help
+	// mechanism will generate a default based on the presence of flags and
+	// subcommands.
 	Usage string
 
 	// A detailed description of the command. Multiple lines are allowed.
