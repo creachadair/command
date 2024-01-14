@@ -205,7 +205,7 @@ type C struct {
 	Help string
 
 	// Flags parsed from the raw argument list. This will be initialized before
-	// Init or Run is called unless CustomFlags is true.
+	// Init or Run is called.
 	Flags flag.FlagSet
 
 	// If false, Flags is used to parse the argument list.  Otherwise, the Init
