@@ -186,8 +186,8 @@ func (e *Env) parseFlags(rawArgs []string) error {
 // remaining unconsumed arguments. If no Run hook is defined, the traversal
 // stops, logs a help message, and reports an error.
 type C struct {
-	// The name of the command, preferably one word. The name is during argument
-	// processing to choose which command or subcommand to execute.
+	// The name of the command, preferably one word. The name is used during
+	// argument processing to choose which command or subcommand to execute.
 	Name string
 
 	// A terse usage summary for the command. Multiple lines are allowed.
