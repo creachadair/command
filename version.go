@@ -43,8 +43,11 @@ type VersionInfo struct {
 	// Name is the base name of the running binary from os.Args.
 	Name string `json:"name"`
 
-	// Path is the import path of the main package.
-	Path string `json:"path"`
+	// BinaryPath is the path of the program binary as reported by os.Executable.
+	BinaryPath string `json:"binaryPath,omitempty"`
+
+	// ImportPath is the Go import path of the main package.
+	ImportPath string `json:"importPath"`
 
 	// Version, if available, is the version tag at which the binary was built.
 	// This is empty if no version label is available, e.g. an untagged commit.
@@ -83,9 +86,12 @@ func GetVersionInfo() VersionInfo {
 		return VersionInfo{Name: filepath.Base(os.Args[0])}
 	}
 	vi := VersionInfo{
-		Name:      filepath.Base(os.Args[0]),
-		Path:      bi.Path,
-		Toolchain: bi.GoVersion,
+		Name:       filepath.Base(os.Args[0]),
+		ImportPath: bi.Path,
+		Toolchain:  bi.GoVersion,
+	}
+	if p, err := os.Executable(); err == nil {
+		vi.BinaryPath = p
 	}
 	vi.parseModule(&bi.Main)
 
@@ -120,8 +126,8 @@ func (v VersionInfo) String() string {
 	if v.Version != "" {
 		fmt.Fprint(&sb, " version ", v.Version)
 	}
-	if v.Path != "" {
-		fmt.Fprint(&sb, " path ", v.Path)
+	if v.ImportPath != "" {
+		fmt.Fprint(&sb, " path ", v.ImportPath)
 	}
 	if v.Commit != "" {
 		fmt.Fprint(&sb, " commit ", v.Commit)
