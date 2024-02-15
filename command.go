@@ -97,11 +97,11 @@ func (e *Env) SetContext(ctx context.Context) *Env {
 // the flag -A. With merging enabled the argument list succeeds, because the
 // parser "looks ahead", treating it as if the caller had written:
 //
-//	one -A 1 -- two -B 2
+//	one -A 1 two -B 2
 //
 // Setting the MergeFlags option also applies to all the descendants of e
 // unless the command's Init callback changes the setting.  Note that if a
-// subcommand defines a flag with the same name as its ancestor, the ancstor
+// subcommand defines a flag with the same name as its ancestor, the ancestor
 // will shadow the flag for the descendant.
 func (e *Env) MergeFlags(merge bool) *Env { e.merge = merge; return e }
 
