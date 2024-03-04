@@ -15,6 +15,10 @@ import (
 // HelpCommand constructs a standardized help command with optional topics.
 // The caller is free to edit the resulting command, each call returns a
 // separate value.
+//
+// As a special case, if there are multiple arguments after the help command
+// and the first is one of "-a", "-all", or "--all", that argument is discarded
+// and the rendered help text includes unlisted commands and private flags.
 func HelpCommand(topics []HelpTopic) *C {
 	cmd := &C{
 		Name:  "help",
@@ -22,7 +26,17 @@ func HelpCommand(topics []HelpTopic) *C {
 		Help:  `Print help for the specified command or topic.`,
 
 		CustomFlags: true,
-		Run:         RunHelp,
+
+		Run: func(env *Env) error {
+			if len(env.Args) >= 2 { // maybe: help -a foo
+				switch env.Args[0] {
+				case "-a", "-all", "--all":
+					env.HelpFlags(IncludeUnlisted | IncludePrivateFlags)
+					env.Args = env.Args[1:]
+				}
+			}
+			return RunHelp(env)
+		},
 	}
 	for _, topic := range topics {
 		cmd.Commands = append(cmd.Commands, topic.command())
@@ -199,7 +213,7 @@ func printShortHelp(env *Env) error {
 // help for the enclosing command or subtopics of "help" itself.
 func RunHelp(env *Env) error {
 	// Check whether the arguments describe the parent or one of its subcommands.
-	target := walkArgs(env.Parent, env.Args)
+	target := walkArgs(env.Parent.HelpFlags(env.hflag), env.Args)
 	if target == env.Parent {
 		// For the parent, include the help command's own topics.
 		return printLongHelp(target, env.Command.HelpInfo(env.hflag|IncludeCommands).Topics)
