@@ -16,9 +16,9 @@ import (
 // The caller is free to edit the resulting command, each call returns a
 // separate value.
 //
-// As a special case, if there are multiple arguments after the help command
-// and the first is one of "-a", "-all", or "--all", that argument is discarded
-// and the rendered help text includes unlisted commands and private flags.
+// As a special case, if there are arguments after the help command and the
+// first is one of "-a", "-all", or "--all", that argument is discarded and the
+// rendered help text includes unlisted commands and private flags.
 func HelpCommand(topics []HelpTopic) *C {
 	cmd := &C{
 		Name:  "help",
@@ -28,7 +28,7 @@ func HelpCommand(topics []HelpTopic) *C {
 		CustomFlags: true,
 
 		Run: func(env *Env) error {
-			if len(env.Args) >= 2 { // maybe: help -a foo
+			if len(env.Args) >= 1 { // maybe: help -a foo
 				switch env.Args[0] {
 				case "-a", "-all", "--all":
 					env.HelpFlags(IncludeUnlisted | IncludePrivateFlags)
