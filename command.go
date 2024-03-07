@@ -309,7 +309,7 @@ func RunOrFail(env *Env, rawArgs []string) {
 // command-line usage was incorrect, or ErrRequestHelp if the user requested
 // help via the --help flag.
 func Run(env *Env, rawArgs []string) (err error) {
-	defer env.Cancel(err)
+	defer func() { env.Cancel(err) }()
 	cmd := env.Command
 	env.Args = rawArgs
 
