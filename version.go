@@ -14,6 +14,14 @@ import (
 	"time"
 )
 
+// ProgramName returns the base name of the currently-running executable.
+func ProgramName() string {
+	if p, err := os.Executable(); err == nil {
+		return filepath.Base(p)
+	}
+	return filepath.Base(os.Args[0])
+}
+
 // VersionCommand constructs a standardized version command that prints version
 // metadata from the running binary to stdout. The caller can safely modify the
 // returned command to customize its behavior.
