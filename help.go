@@ -236,10 +236,13 @@ func walkArgs(env *Env, args []string) *Env {
 
 	for _, arg := range args {
 		// If no corresponding subcommand is found, or if the subtree starting
-		// with that command is unlisted, report no match.
+		// with that command is unlisted and we weren't asked to show unlisted
+		// things, report no match.
 		next := cur.Command.FindSubcommand(arg)
-		if next == nil || next.Unlisted {
+		if next == nil {
 			return nil
+		} else if next.Unlisted && !env.hflag.wantUnlisted() {
+			return nil // skip unlisted commands when not flagged on
 		}
 		// Populate flags so that the help text will include them.
 		next.setFlags(cur, &next.Flags)
