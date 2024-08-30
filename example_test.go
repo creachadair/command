@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
+	"os"
 	"strings"
 
 	"github.com/creachadair/command"
@@ -103,15 +105,25 @@ This help text is printed by the "help" subcommand.`,
 		},
 	}
 
+	// For purposes of the test output, discard help output.
+	null, err := os.Create("/dev/null")
+	if err != nil {
+		log.Fatal(err)
+	}
+	save := os.Stdout
+	os.Stdout = null
+
 	// Demonstrate help output.
 	//
 	// Note that the argument to NewEnv is plumbed via the Config field of Env.
+
 	var opt options
 	env := root.NewEnv(&opt)
 	env.Log = io.Discard
 
 	command.Run(env, []string{"help"})
-	opt = options{} // reset settings
+	opt = options{}  // reset settings
+	os.Stdout = save // restore stdout
 
 	// Requesting help for an unlisted subcommand reports an error.
 	command.Run(env, []string{"help", "secret"})

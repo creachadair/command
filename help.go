@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strings"
 	"text/tabwriter"
@@ -209,6 +210,14 @@ func printShortHelp(env *Env) error {
 	return ErrRequestHelp
 }
 
+// toStdout returns a copy of e in which output goes to stdout instead of
+// whatever it is set to (stderr by default).
+func (e *Env) toStdout() *Env {
+	cenv := *e // shallow copy
+	cenv.Log = os.Stdout
+	return &cenv
+}
+
 // RunHelp is a run function that implements long help.  It displays the
 // help for the enclosing command or subtopics of "help" itself.
 func RunHelp(env *Env) error {
@@ -216,14 +225,14 @@ func RunHelp(env *Env) error {
 	target := walkArgs(env.Parent.HelpFlags(env.hflag), env.Args)
 	if target == env.Parent {
 		// For the parent, include the help command's own topics.
-		return printLongHelp(target, env.Command.HelpInfo(env.hflag|IncludeCommands).Topics)
+		return printLongHelp(target.toStdout(), env.Command.HelpInfo(env.hflag|IncludeCommands).Topics)
 	} else if target != nil {
-		return printLongHelp(target, nil)
+		return printLongHelp(target.toStdout(), nil)
 	}
 
 	// Otherwise, check whether the arguments name a help subcommand.
 	if ht := walkArgs(env, env.Args); ht != nil {
-		return printLongHelp(ht, nil)
+		return printLongHelp(ht.toStdout(), nil)
 	}
 
 	// Otherwise the arguments request an unknown topic.
