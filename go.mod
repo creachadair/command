@@ -1,6 +1,6 @@
 module github.com/creachadair/command
 
-go 1.21
+go 1.22
 
 toolchain go1.21.2
 
