@@ -26,7 +26,7 @@ import (
 	"os"
 )
 
-// Env is the environment passed to the Run function of a command.  The
+// Env is the environment passed to the Run and Init functions of a command.  The
 // environment carries command, context, configuration data, and arguments for the
 // command, and records the path from the root of the command tree.
 //
@@ -34,7 +34,7 @@ import (
 // diagnostic output the command wishes to emit.  Primary command output should
 // be sent to stdout.
 type Env struct {
-	// Parent is the environemnt of the command for which this is a direct
+	// Parent is the environmnt of the command for which this is a direct
 	// subcommand. For the root command, Parent is nil.
 	Parent *Env
 
