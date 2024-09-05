@@ -26,16 +26,34 @@ import (
 	"os"
 )
 
-// Env is the environment passed to the Run function of a command.
-// An Env implements the io.Writer interface, and should be used as
-// the target of any diagnostic output the command wishes to emit.
-// Primary command output should be sent to stdout.
+// Env is the environment passed to the Run function of a command.  The
+// environment carries command, context, configuration data, and arguments for the
+// command, and records the path from the root of the command tree.
+//
+// An Env implements the [io.Writer] interface, and should be used for any
+// diagnostic output the command wishes to emit.  Primary command output should
+// be sent to stdout.
 type Env struct {
-	Parent  *Env      // if this is a subcommand, its parent environment (or nil)
-	Command *C        // the C value that carries the Run function
-	Config  any       // configuration data
-	Args    []string  // the unclaimed command-line arguments
-	Log     io.Writer // where to write diagnostic output (nil for os.Stderr)
+	// Parent is the environemnt of the command for which this is a direct
+	// subcommand. For the root command, Parent is nil.
+	Parent *Env
+
+	// Command is the [C] value for which this environment was dispatched.
+	// It is always set.
+	Command *C
+
+	// Config, if non-nil, is a configuration value provided by the parent of
+	// the command. By default, a Config is passed from parent environment to
+	// each of its children, but the Init function may override it.
+	Config any
+
+	// Args are the command-line arguments remaining after flags have been
+	// parsed.
+	Args []string
+
+	// Log, if non-nil, is where diagnostic output is written when an Env
+	// is used as an [io.Writer]. If nil, it defaults to [os.Stderr].
+	Log io.Writer // where to write diagnostic output (nil for os.Stderr)
 
 	ctx    context.Context
 	cancel context.CancelCauseFunc
