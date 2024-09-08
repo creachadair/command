@@ -40,7 +40,6 @@ This help text is printed by the "help" subcommand.`,
 			fs.StringVar(&opt.label, "label", "", "Label text")
 			fs.IntVar(&opt.private, "p", 0, "PRIVATE: Unadvertised flag")
 			fs.BoolVar(&opt.confirm, "y", false, "Confirm activity")
-			env.MergeFlags(true)
 		},
 
 		// Note that the "example" command does not have a Run function.

@@ -55,10 +55,10 @@ type Env struct {
 	// is used as an [io.Writer]. If nil, it defaults to [os.Stderr].
 	Log io.Writer // where to write diagnostic output (nil for os.Stderr)
 
-	ctx    context.Context
-	cancel context.CancelCauseFunc
-	merge  bool
-	hflag  HelpFlags // default: no unlisted commands, no private flags
+	ctx       context.Context
+	cancel    context.CancelCauseFunc
+	skipMerge bool      // default: merge flags later in the argument list
+	hflag     HelpFlags // default: no unlisted commands, no private flags
 }
 
 // Context returns the context associated with e. If e does not have its own
@@ -101,7 +101,7 @@ func (e *Env) SetContext(ctx context.Context) *Env {
 //
 // Setting this option true modifies the flag parsing algorithm for commands
 // dispatched through e to "merge" flags matching the current command from the
-// remainder of the argument list. The default is false.
+// remainder of the argument list. The default is true.
 //
 // Merging allows flags for a command to be defined later in the command-line,
 // after subcommands and their own flags.  For example, given a command "one"
@@ -121,7 +121,7 @@ func (e *Env) SetContext(ctx context.Context) *Env {
 // unless the command's Init callback changes the setting.  Note that if a
 // subcommand defines a flag with the same name as its ancestor, the ancestor
 // will shadow the flag for the descendant.
-func (e *Env) MergeFlags(merge bool) *Env { e.merge = merge; return e }
+func (e *Env) MergeFlags(merge bool) *Env { e.skipMerge = !merge; return e }
 
 // HelpFlags sets the base help flags for e and returns e.
 //
@@ -161,7 +161,7 @@ func (e *Env) parseFlags(rawArgs []string) error {
 	e.Command.Flags.Usage = func() {}
 	e.Command.Flags.SetOutput(io.Discard)
 	toParse := rawArgs
-	if e.merge {
+	if !e.skipMerge {
 		flags, free, err := splitFlags(&e.Command.Flags, rawArgs)
 		if err != nil {
 			return err
