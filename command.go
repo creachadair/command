@@ -34,7 +34,7 @@ import (
 // diagnostic output the command wishes to emit.  Primary command output should
 // be sent to stdout.
 type Env struct {
-	// Parent is the environmnt of the command for which this is a direct
+	// Parent is the environment of the command for which this is a direct
 	// subcommand. For the root command, Parent is nil.
 	Parent *Env
 
@@ -180,20 +180,21 @@ func (e *Env) parseFlags(rawArgs []string) error {
 
 // C carries the description and invocation function for a command.
 //
-// To process a command-line, the Run function walks through the arguments
+// To process a command-line, the Run function walks through the argument list
 // starting from a root command to discover which command should be run and
 // what flags it requires. This argument traversal proceeds in phases:
 //
 // When a command is first discovered during argument traversal, its SetFlags
 // hook is executed (if defined) to prepare its flag set.  Then, unless the
 // CustomFlags option is true, the rest of the argument list is parsed using
-// the FlagSet to separate command-specific flags from further arguments and/or
-// subcommands.
+// the Flags field, to separate command-specific flags from further arguments
+// and/or subcommands.
 //
-// After flags are parsed and before attempting to explore subcommands, the
-// current command's Init hook is called (if defined). If Init reports an error
-// it terminates argument traversal, and that error is reported back to the
-// user.
+// After flags are prepared, before attempting to explore subcommands, the
+// current command's Init hook is called (if set). If Init reports an error, it
+// terminates argument traversal and that error is reported back to the
+// user. When CustomFlags is true, Init may handle option processing and update
+// its [Env] parameter as needed before argument processing continues.
 //
 // Next, if there are any remaining non-flag arguments, Run checks whether the
 // current command has a subcommand matching the first argument.  If so
@@ -201,8 +202,10 @@ func (e *Env) parseFlags(rawArgs []string) error {
 // command-line.
 //
 // Otherwise, if the command defines a Run hook, that hook is executed with the
-// remaining unconsumed arguments. If no Run hook is defined, the traversal
-// stops, logs a help message, and reports an error.
+// remaining unconsumed arguments.
+//
+// If no Run hook is defined, the traversal stops, logs a help message, and
+// reports an error.
 type C struct {
 	// The name of the command, preferably one word. The name is used during
 	// argument processing to choose which command or subcommand to execute.
@@ -211,10 +214,10 @@ type C struct {
 	// A terse usage summary for the command. Multiple lines are allowed.
 	// Each line should be self-contained for a particular usage sense.
 	//
-	// The name of the command will be automatically inserted at the front of
-	// each usage line if it is not present. If no usage is defined, the help
-	// mechanism will generate a default based on the presence of flags and
-	// subcommands.
+	// When printing help text, the name of the command will be automatically
+	// inserted at the front of each usage line if it is not present. If no
+	// usage is defined, the help mechanism will generate a default based on the
+	// presence of flags and subcommands.
 	Usage string
 
 	// A detailed description of the command. Multiple lines are allowed.
