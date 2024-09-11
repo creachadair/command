@@ -170,7 +170,7 @@ func (e *Env) parseFlags(rawArgs []string) error {
 	}
 	err := e.Command.Flags.Parse(toParse)
 	if errors.Is(err, flag.ErrHelp) {
-		return printShortHelp(e)
+		return printLongHelp(e, nil)
 	} else if err != nil {
 		return err
 	}
