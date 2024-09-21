@@ -42,7 +42,10 @@ func (c *C) usageLines(flags HelpFlags) []string {
 			tag = joinSpace(tag, "<command>")
 		}
 		if tag != "" {
-			return []string{tag}
+			lines = append(lines, tag)
+		}
+		if hc := c.FindSubcommand("help"); hc != nil && hc.Runnable() {
+			lines = append(lines, "help")
 		}
 	}
 	return lines

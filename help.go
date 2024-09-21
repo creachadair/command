@@ -23,8 +23,10 @@ import (
 func HelpCommand(topics []HelpTopic) *C {
 	cmd := &C{
 		Name:  "help",
-		Usage: "[topic/command]",
-		Help:  `Print help for the specified command or topic.`,
+		Usage: "[-a|--all] [topic/command]",
+		Help: `Print help for the specified command or topic.
+
+With -a or --all, also show help for unlisted commands and private flags.`,
 
 		CustomFlags: true,
 
