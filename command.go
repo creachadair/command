@@ -5,15 +5,15 @@
 //
 // # Overview
 //
-// The command package helps a program to process a language of named
-// commands, each of which may have its own flags, arguments, and nested
-// subcommands.  A command is represented by a *command.C value carrying help
-// text, usage summaries, and a function to execute its behavior.
+// The command package helps a program to process a language of named commands,
+// each of which may have its own flags, arguments, and nested subcommands.  A
+// command is represented by a [C] value carrying help text, usage summaries,
+// and a function to execute its behavior.
 //
-// The Run and RunOrFail functions parse the raw argument list of a program
-// against a tree of *command.C values, parsing flags as needed and executing
-// the selected command or printing appropriate diagnostics. Flags are parsed
-// using the standard "flag" package by default.
+// The [Run] and [RunOrFail] functions parse the raw argument list of a program
+// against a tree of [C] values, parsing flags as needed and executing the
+// selected command or printing appropriate diagnostics. Flags are parsed using
+// the standard "flag" package by default.
 package command
 
 import (
@@ -145,7 +145,7 @@ func (e *Env) newChild(cmd *C, cargs []string) *Env {
 	return &cp
 }
 
-// Write implements the io.Writer interface. Writing to a context writes to its
+// Write implements the [io.Writer] interface. Writing to a context writes to its
 // designated output stream, allowing the context to be sent diagnostic output.
 func (e *Env) Write(data []byte) (int, error) {
 	return e.output().Write(data)
@@ -180,9 +180,9 @@ func (e *Env) parseFlags(rawArgs []string) error {
 
 // C carries the description and invocation function for a command.
 //
-// To process a command-line, the Run function walks through the argument list
-// starting from a root command to discover which command should be run and
-// what flags it requires. This argument traversal proceeds in phases:
+// To process a command-line, the [Run] function walks through the argument
+// list starting from a root command to discover which command should be run
+// and what flags it requires. This argument traversal proceeds in phases:
 //
 // When a command is first discovered during argument traversal, its SetFlags
 // hook is executed (if defined) to prepare its flag set.  Then, unless the
@@ -196,8 +196,8 @@ func (e *Env) parseFlags(rawArgs []string) error {
 // user. When CustomFlags is true, Init may handle option processing and update
 // its [Env] parameter as needed before argument processing continues.
 //
-// Next, if there are any remaining non-flag arguments, Run checks whether the
-// current command has a subcommand matching the first argument.  If so
+// Next, if there are any remaining non-flag arguments, [Run] checks whether
+// the current command has a subcommand matching the first argument.  If so
 // argument traversal recurs into that subcommand to process the rest of the
 // command-line.
 //
@@ -304,10 +304,10 @@ func (e *Env) Usagef(msg string, args ...any) error {
 	return UsageError{Env: e, Message: fmt.Sprintf(msg, args...)}
 }
 
-// RunOrFail behaves as Run, but prints a log message and calls os.Exit if the
-// command reports an error. If the command succeeds, RunOrFail returns.
+// RunOrFail behaves as Run, but prints a log message and calls [os.Exit] if
+// the command reports an error. If the command succeeds, RunOrFail returns.
 //
-// If a command reports a UsageError or ErrRequestHelp, the exit code is 2.
+// If a command reports a [UsageError] or [ErrRequestHelp], the exit code is 2.
 // For any other error the exit code is 1.
 func RunOrFail(env *Env, rawArgs []string) {
 	if err := Run(env, rawArgs); err != nil {
@@ -324,10 +324,10 @@ func RunOrFail(env *Env, rawArgs []string) {
 }
 
 // Run traverses the given unprocessed arguments starting from env.
-// See the documentation for type C for a description of argument traversal.
+// See the documentation for type [C] for a description of argument traversal.
 //
-// Run writes usage information to env and returns a UsageError if the
-// command-line usage was incorrect, or ErrRequestHelp if the user requested
+// Run writes usage information to env and returns a [UsageError] if the
+// command-line usage was incorrect, or [ErrRequestHelp] if the user requested
 // help via the --help flag.
 func Run(env *Env, rawArgs []string) (err error) {
 	defer func() { env.Cancel(err) }()
