@@ -289,6 +289,10 @@ func (c *C) FindSubcommand(name string) *C {
 // ErrRequestHelp is returned from Run if the user requested help.
 var ErrRequestHelp = errors.New("help requested")
 
+// ErrRunPanicked is a sentinel error reported by [Run] if a panic occurred
+// while evaluating a command.
+var ErrRunPanicked = errors.New("run panicked")
+
 // UsageError is the concrete type of errors reported by the Usagef function,
 // indicating an error in the usage of a command.
 type UsageError struct {
@@ -329,8 +333,16 @@ func RunOrFail(env *Env, rawArgs []string) {
 // Run writes usage information to env and returns a [UsageError] if the
 // command-line usage was incorrect, or [ErrRequestHelp] if the user requested
 // help via the --help flag.
+//
+// If the Init or Run function of a command panics, Run reports an error that
+// includes [ErrRunPanicked].
 func Run(env *Env, rawArgs []string) (err error) {
-	defer func() { env.Cancel(err) }()
+	defer func() {
+		if x := recover(); x != nil {
+			err = fmt.Errorf("command %q %w: %v", env.Command.Name, ErrRunPanicked, x)
+		}
+		env.Cancel(err)
+	}()
 	cmd := env.Command
 	env.Args = rawArgs
 

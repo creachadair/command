@@ -101,6 +101,13 @@ This help text is printed by the "help" subcommand.`,
 					return nil
 				},
 			},
+
+			{
+				Name: "fatal",
+
+				// Demonstrate that a command which panics is properly handled.
+				Run: func(env *command.Env) error { panic("ouch") },
+			},
 		},
 	}
 
@@ -152,13 +159,18 @@ This help text is printed by the "help" subcommand.`,
 	command.RunOrFail(env, []string{"secret", "fort"})
 	opt = options{}
 
+	// A command that panics is caught and reported as an error.
+	fmt.Println("[err]", command.Run(env, []string{"fatal"}))
+
 	// An unmerged flag.
 	command.RunOrFail(env, []string{"echo", "-n", "baz"})
+
 	// Output:
 	// foo bar
 	// [xyzzy] bar
 	// [foo] bar
 	// [ok] <25> bar
 	// easter-egg fort
+	// [err] command "fatal" run panicked: ouch
 	// baz
 }
