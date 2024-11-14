@@ -171,6 +171,6 @@ This help text is printed by the "help" subcommand.`,
 	// [foo] bar
 	// [ok] <25> bar
 	// easter-egg fort
-	// [err] command "fatal" run panicked: ouch
+	// [err] command "fatal" panicked: ouch
 	// baz
 }

@@ -24,6 +24,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime/debug"
 )
 
 // Env is the environment passed to the Run and Init functions of a command.  The
@@ -289,10 +290,6 @@ func (c *C) FindSubcommand(name string) *C {
 // ErrRequestHelp is returned from Run if the user requested help.
 var ErrRequestHelp = errors.New("help requested")
 
-// ErrRunPanicked is a sentinel error reported by [Run] if a panic occurred
-// while evaluating a command.
-var ErrRunPanicked = errors.New("run panicked")
-
 // UsageError is the concrete type of errors reported by the Usagef function,
 // indicating an error in the usage of a command.
 type UsageError struct {
@@ -307,6 +304,30 @@ func (u UsageError) Error() string { return string(u.Message) }
 func (e *Env) Usagef(msg string, args ...any) error {
 	return UsageError{Env: e, Message: fmt.Sprintf(msg, args...)}
 }
+
+// PanicError is the concrete type of errors reported by the [Run] function
+// when a panic occurs in the Init or Run function of a command during the
+// dispatch process. The caller may capture this error with [errors.As] to
+// recover the panic stack and recovered value.
+type PanicError struct {
+	env   *Env   // the environment active when the panic occurred
+	stack []byte // the panic stack
+	value any    // the value raised by the panic
+}
+
+// Error satisfies the error interface.
+func (p PanicError) Error() string {
+	return fmt.Sprintf("command %q panicked: %v", p.env.Command.Name, p.value)
+}
+
+// Env returns the environment active when the panic from p occurred.
+func (p PanicError) Env() *Env { return p.env }
+
+// Stack returns a string representation of the stack trace from p.
+func (p PanicError) Stack() string { return string(p.stack) }
+
+// Value returns the value raised with the panic captured by p.
+func (p PanicError) Value() any { return p.value }
 
 // RunOrFail behaves as Run, but prints a log message and calls [os.Exit] if
 // the command reports an error. If the command succeeds, RunOrFail returns.
@@ -334,12 +355,12 @@ func RunOrFail(env *Env, rawArgs []string) {
 // command-line usage was incorrect, or [ErrRequestHelp] if the user requested
 // help via the --help flag.
 //
-// If the Init or Run function of a command panics, Run reports an error that
-// includes [ErrRunPanicked].
+// If the Init or Run function of a command panics, the error reported by Run
+// is a [PanicError].
 func Run(env *Env, rawArgs []string) (err error) {
 	defer func() {
 		if x := recover(); x != nil {
-			err = fmt.Errorf("command %q %w: %v", env.Command.Name, ErrRunPanicked, x)
+			err = PanicError{env: env, stack: debug.Stack(), value: x}
 		}
 		env.Cancel(err)
 	}()
