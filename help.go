@@ -90,7 +90,9 @@ const (
 // is considered a help topic, and listed separately.
 //
 // Flags whose usage message has the case-sensitive prefix "PRIVATE:" are
-// omitted from help listings.
+// omitted from help listings unless [IncludePrivateFlags] is set.
+// Subcommands marked as unlisted are omitted from help listings unless
+// [IncludeUnlisted] is set.
 func (c *C) HelpInfo(flags HelpFlags) HelpInfo {
 	help := strings.TrimSpace(c.Help)
 	prefix := "  " + c.Name + " "
