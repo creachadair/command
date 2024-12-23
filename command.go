@@ -342,6 +342,10 @@ func RunOrFail(env *Env, rawArgs []string) {
 			uerr.Env.Command.HelpInfo(env.hflag).WriteUsage(uerr.Env)
 		} else if !errors.Is(err, ErrRequestHelp) {
 			log.Printf("Error: %v", err)
+			var pe PanicError
+			if errors.As(err, &pe) {
+				log.Printf("Stack trace from panic:\n%s", pe.Stack())
+			}
 			os.Exit(1)
 		}
 		os.Exit(2)

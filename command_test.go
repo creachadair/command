@@ -19,6 +19,8 @@ func TestRun_panic(t *testing.T) {
 		},
 	}
 	err := command.Run(cmd.NewEnv(nil), []string{"freak-out"})
+	t.Logf("Error reported by run: %v", err)
+
 	var got command.PanicError
 	if !errors.As(err, &got) {
 		t.Fatalf("Run: got error %[1]% %[1]v, want PanicError", err)
