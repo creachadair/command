@@ -79,6 +79,9 @@ type VersionInfo struct {
 	// Arch gives the GOARCH value used by the compiler.
 	Arch string `json:"arch,omitempty"`
 
+	// BuildTags gives the build tags (if any) defined during the build.
+	BuildTags []string `json:"tags,omitempty"`
+
 	// Time, if non-nil, gives the timestamp corresponding to the commit at
 	// which the binary was built.  It is nil if the commit time is not
 	// recorded; otherwise the value is a non-zero time in UTC.
@@ -121,6 +124,10 @@ func GetVersionInfo() VersionInfo {
 			vi.OS = s.Value
 		case "GOARCH":
 			vi.Arch = s.Value
+		case "-tags":
+			if s.Value != "" {
+				vi.BuildTags = strings.Split(s.Value, ",")
+			}
 		}
 	}
 	return vi
@@ -148,6 +155,9 @@ func (v VersionInfo) String() string {
 	}
 	if v.OS != "" && v.Arch != "" {
 		fmt.Fprint(&sb, " for ", v.OS, "/", v.Arch)
+	}
+	if len(v.BuildTags) != 0 {
+		fmt.Fprint(&sb, " tags ", strings.Join(v.BuildTags, ","))
 	}
 	return sb.String()
 }
