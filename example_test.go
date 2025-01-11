@@ -112,7 +112,7 @@ This help text is printed by the "help" subcommand.`,
 		},
 	}
 
-	// To run a comment, we need to construct an environment for it.
+	// To run a command, we need to construct an environment for it.
 	// The environment can carry an arbitrary config value, which in this case
 	// is our custom options type.
 	var opts options
