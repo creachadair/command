@@ -266,7 +266,7 @@ func (c *C) Runnable() bool { return c != nil && (c.Run != nil || c.Init != nil)
 func (c *C) HasRunnableSubcommands() bool {
 	if c != nil {
 		for _, cmd := range c.Commands {
-			if cmd.Runnable() {
+			if cmd.Runnable() || cmd.HasRunnableSubcommands() {
 				return true
 			}
 		}
