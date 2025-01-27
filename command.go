@@ -263,6 +263,7 @@ type C struct {
 func (c *C) Runnable() bool { return c != nil && (c.Run != nil || c.Init != nil) }
 
 // HasRunnableSubcommands reports whether c has any runnable subcommands.
+// Both direct and indirect subcommands are considered.
 func (c *C) HasRunnableSubcommands() bool {
 	if c != nil {
 		for _, cmd := range c.Commands {
