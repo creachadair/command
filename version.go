@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -17,9 +18,16 @@ import (
 // ProgramName returns the base name of the currently-running executable.
 func ProgramName() string {
 	if p, err := os.Executable(); err == nil {
-		return filepath.Base(p)
+		return trimExe(filepath.Base(p))
 	}
-	return filepath.Base(os.Args[0])
+	return trimExe(filepath.Base(os.Args[0]))
+}
+
+func trimExe(s string) string {
+	if runtime.GOOS == "windows" {
+		return strings.TrimSuffix(s, ".exe")
+	}
+	return s
 }
 
 // VersionCommand constructs a standardized version command that prints version
