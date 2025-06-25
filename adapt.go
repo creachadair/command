@@ -7,10 +7,10 @@ import (
 )
 
 var (
-	envType         = reflect.TypeOf((*Env)(nil))
-	errType         = reflect.TypeOf((*error)(nil)).Elem()
-	stringType      = reflect.TypeOf(string(""))
-	stringSliceType = reflect.TypeOf([]string(nil))
+	envType         = reflect.TypeFor[*Env]()
+	errType         = reflect.TypeFor[error]()
+	stringType      = reflect.TypeFor[string]()
+	stringSliceType = reflect.TypeFor[[]string]()
 )
 
 // Adapt adapts a more general function to the type signature of a Run
