@@ -100,17 +100,23 @@ type VersionInfo struct {
 // metadata in the currently running process. If no build information is
 // available, only the Name field will be populated.
 func GetVersionInfo() VersionInfo {
+	var pgm string
+	exe, err := os.Executable()
+	if err == nil {
+		pgm = trimExe(filepath.Base(exe))
+	} else {
+		pgm = trimExe(filepath.Base(os.Args[0]))
+	}
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {
-		return VersionInfo{Name: filepath.Base(os.Args[0])}
+		return VersionInfo{Name: pgm}
 	}
+
 	vi := VersionInfo{
-		Name:       filepath.Base(os.Args[0]),
+		Name:       pgm,
 		ImportPath: bi.Path,
 		Toolchain:  bi.GoVersion,
-	}
-	if p, err := os.Executable(); err == nil {
-		vi.BinaryPath = p
+		BinaryPath: exe,
 	}
 	vi.parseModule(&bi.Main)
 
