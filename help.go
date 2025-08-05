@@ -95,10 +95,11 @@ const (
 // [IncludeUnlisted] is set.
 func (c *C) HelpInfo(flags HelpFlags) HelpInfo {
 	help := strings.TrimSpace(c.Help)
+	synopsis, _, _ := strings.Cut(help, "\n")
 	prefix := "  " + c.Name + " "
 	h := HelpInfo{
 		Name:     c.Name,
-		Synopsis: strings.SplitN(help, "\n", 2)[0],
+		Synopsis: synopsis,
 		Help:     help,
 	}
 	if u := c.usageLines(flags); len(u) != 0 {
