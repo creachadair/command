@@ -227,18 +227,19 @@ type C struct {
 	Help string
 
 	// Flags parsed from the raw argument list. This will be initialized before
-	// Init or Run is called.
+	// Init or Run is called, unless CustomFlags is true.
 	Flags flag.FlagSet
 
-	// If false, Flags is used to parse the argument list.  Otherwise, the Init
-	// function is responsible for parsing flags from the argument list.
+	// If true, flags are not parsed automatically and the Init function (if
+	// any) is responsible for parsing flags from the argument list. Otherwise,
+	// Flags is called to parse the argument list before invoking Init or Run.
 	CustomFlags bool
 
 	// If true, exclude this command from help listings unless it is explicitly
 	// named and requested.
 	Unlisted bool
 
-	// Perform the action of the command. If nil, calls FailWithUsage.
+	// Perform the action of the command. If nil, it defaults to FailWithUsage.
 	Run func(env *Env) error
 
 	// If set, this will be called before flags are parsed, to give the command
@@ -250,7 +251,8 @@ type C struct {
 	// and that error is returned to the caller.
 	//
 	// The Init callback is permitted to modify env, and any such modifications
-	// will persist through the rest of the invocation.
+	// will persist through the rest of the invocation. When CustomFlags is
+	// true, this is where flag processing may be handled.
 	Init func(env *Env) error
 
 	// Subcommands of this command.
