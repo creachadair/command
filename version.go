@@ -60,40 +60,40 @@ type VersionInfo struct {
 	Name string `json:"name"`
 
 	// BinaryPath is the path of the program binary as reported by os.Executable.
-	BinaryPath string `json:"binaryPath,omitempty"`
+	BinaryPath string `json:"binaryPath,omitzero"`
 
 	// ImportPath is the Go import path of the main package.
 	ImportPath string `json:"importPath"`
 
 	// Version, if available, is the version tag at which the binary was built.
 	// This is empty if no version label is available, e.g. an untagged commit.
-	Version string `json:"version,omitempty"`
+	Version string `json:"version,omitzero"`
 
 	// Commit, if available, is the commit hash at which the binary was built.
 	// Typically this will be a hex string, but the format is not guaranteed.
-	Commit string `json:"commit,omitempty"`
+	Commit string `json:"commit,omitzero"`
 
 	// Modified reports whether the contents of the build environment were
 	// modified from a clean state. This may indicate the presence of extra
 	// files in the working directory, even if the repository is up-to-date.
-	Modified bool `json:"modified,omitempty"`
+	Modified bool `json:"modified,omitzero"`
 
 	// Toolchain gives the Go toolchain version that built the binary.
 	Toolchain string `json:"toolchain"`
 
 	// OS gives the GOOS value used by the compiler.
-	OS string `json:"os,omitempty"`
+	OS string `json:"os,omitzero"`
 
 	// Arch gives the GOARCH value used by the compiler.
-	Arch string `json:"arch,omitempty"`
+	Arch string `json:"arch,omitzero"`
 
 	// BuildTags gives the build tags (if any) defined during the build.
-	BuildTags []string `json:"tags,omitempty"`
+	BuildTags []string `json:"tags,omitzero"`
 
-	// Time, if non-nil, gives the timestamp corresponding to the commit at
-	// which the binary was built.  It is nil if the commit time is not
-	// recorded; otherwise the value is a non-zero time in UTC.
-	Time *time.Time `json:"time,omitempty"`
+	// Time gives the timestamp corresponding to the commit at which the binary
+	// was built.  A zero time means the commit time was not recorded; otherwise
+	// the value is a in UTC.
+	Time time.Time `json:"time,omitzero"`
 }
 
 // GetVersionInfo returns a VersionInfo record extracted from the build
@@ -128,10 +128,8 @@ func GetVersionInfo() VersionInfo {
 		case "vcs.revision":
 			vi.Commit = s.Value
 		case "vcs.time":
-			ts, err := time.Parse(time.RFC3339, s.Value)
-			if err == nil {
-				vi.Time = &ts
-			}
+			ts, _ := time.Parse(time.RFC3339, s.Value)
+			vi.Time = ts
 		case "vcs.modified":
 			vi.Modified = s.Value == "true"
 		case "GOOS":
@@ -164,7 +162,7 @@ func (v VersionInfo) String() string {
 	if v.Toolchain != "" {
 		fmt.Fprint(&sb, " with ", v.Toolchain)
 	}
-	if v.Time != nil {
+	if !v.Time.IsZero() {
 		fmt.Fprint(&sb, " at ", v.Time.Format(time.RFC3339))
 	}
 	if v.OS != "" && v.Arch != "" {
@@ -188,7 +186,7 @@ func (v *VersionInfo) parseModule(m *debug.Module) bool {
 	// by the module plumbing, e.g., v1.2.3-{date}-{commit}.
 	if ts, commit, ok := parsePseudoVersion(m.Version); ok {
 		v.Commit = commit
-		v.Time = &ts
+		v.Time = ts
 		return true
 	}
 	if m.Version != "(devel)" {
