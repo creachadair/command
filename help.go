@@ -82,6 +82,8 @@ const (
 	IncludeCommands     HelpFlags = 1 << iota // include subcommands and help topics
 	IncludeUnlisted                           // include unlisted subcommands
 	IncludePrivateFlags                       // include private (hidden) flags
+
+	IncludeAll HelpFlags = ^0 // include all available help types
 )
 
 // HelpInfo returns help details for c.

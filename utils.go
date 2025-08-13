@@ -132,3 +132,57 @@ func isBoolFlag(f *flag.Flag) bool {
 }
 
 func joinArgs(a, b []string) []string { return append(a, b...) }
+
+// CInfo represents metadata about a command and its subcommands, in a format
+// suitable for JSON encoding.
+type CInfo struct {
+	Name  string   `json:"name"`
+	Usage []string `json:"usage,omitempty"`
+	Help  string   `json:"help,omitzero"`
+
+	Runnable bool       `json:"runnable"`
+	Flags    []FlagInfo `json:"flags,omitempty"`
+	Unlisted bool       `json:"unlisted,omitzero"`
+	Commands []*CInfo   `json:"commands,omitempty"`
+}
+
+// FlagInfo represents metadata about a flag defined by a command, in a format
+// suitable for JSON encoding.
+type FlagInfo struct {
+	Name          string `json:"name"`
+	Usage         string `json:"usage"`
+	DefaultString string `json:"defaultString,omitempty"`
+}
+
+// Info constructs a [CInfo] record for c and its subcommands.  The provided
+// help flags determine the visibility of unlisted and private flags.
+func (c *C) Info(flags HelpFlags) *CInfo {
+	c.setFlags(c.NewEnv(nil), &c.Flags)
+	out := &CInfo{
+		Name:     c.Name,
+		Usage:    c.usageLines(flags),
+		Help:     c.Help,
+		Runnable: c.Runnable(),
+		Unlisted: c.Unlisted,
+	}
+	c.Flags.VisitAll(func(f *flag.Flag) {
+		u, ok := strings.CutPrefix(f.Usage, flagPrivatePrefix)
+		if ok && !flags.wantPrivateFlags() {
+			return // skip
+		}
+		out.Flags = append(out.Flags, FlagInfo{
+			Name:          f.Name,
+			Usage:         u,
+			DefaultString: f.DefValue,
+		})
+	})
+	if flags.wantCommands() {
+		for _, sub := range c.Commands {
+			if sub.Unlisted && !flags.wantUnlisted() {
+				continue
+			}
+			out.Commands = append(out.Commands, sub.Info(flags))
+		}
+	}
+	return out
+}
