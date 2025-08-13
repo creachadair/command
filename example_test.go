@@ -11,7 +11,7 @@ import (
 
 // The environment passed to a command can carry an arbitrary config value.
 // Here we use a struct carrying information about options.
-type options struct {
+var options struct {
 	noNewline bool
 	label     string
 	private   int
@@ -36,10 +36,9 @@ This help text is printed by the "help" subcommand.`,
 
 		// This hook is called (when defined) to set up flags.
 		SetFlags: func(env *command.Env, fs *flag.FlagSet) {
-			opt := env.Config.(*options)
-			fs.StringVar(&opt.label, "label", "", "Label text")
-			fs.IntVar(&opt.private, "p", 0, "PRIVATE: Unadvertised flag")
-			fs.BoolVar(&opt.confirm, "y", false, "Confirm activity")
+			fs.StringVar(&options.label, "label", "", "Label text")
+			fs.IntVar(&options.private, "p", 0, "PRIVATE: Unadvertised flag")
+			fs.BoolVar(&options.confirm, "y", false, "Confirm activity")
 		},
 
 		// Note that the "example" command does not have a Run function.
@@ -56,22 +55,29 @@ This help text is printed by the "help" subcommand.`,
 
 				SetFlags: func(env *command.Env, fs *flag.FlagSet) {
 					// Pull the config value out of the environment and attach a flag to it.
-					opt := env.Config.(*options)
-					fs.BoolVar(&opt.noNewline, "n", false, "Do not print a trailing newline")
+					fs.BoolVar(&options.noNewline, "n", false, "Do not print a trailing newline")
 				},
 
 				Run: func(env *command.Env) error {
-					opt := env.Config.(*options)
-					if opt.label != "" {
-						fmt.Printf("[%s] ", opt.label)
+					if options.label != "" {
+						fmt.Printf("[%s] ", options.label)
 					}
-					if opt.private > 0 {
-						fmt.Printf("<%d> ", opt.private)
+					if options.private > 0 {
+						fmt.Printf("<%d> ", options.private)
 					}
 					fmt.Print(strings.Join(env.Args, " "))
-					if !opt.noNewline {
+					if !options.noNewline {
 						fmt.Println()
 					}
+					return nil
+				},
+			},
+
+			{
+				Name: "env",
+				Help: "Print the environment config passed to the command.",
+				Run: func(env *command.Env) error {
+					fmt.Printf("config: %+v", env.Config)
 					return nil
 				},
 			},
@@ -114,7 +120,6 @@ This help text is printed by the "help" subcommand.`,
 
 	// To run a command, we need to construct an environment for it.
 	// The environment can carry an arbitrary config value, which in this case
-	// is our custom options type.
-	var opts options
-	command.RunOrFail(root.NewEnv(&opts), os.Args[1:])
+	// is a string just to demonstrate the facility.
+	command.RunOrFail(root.NewEnv("envtext"), os.Args[1:])
 }
