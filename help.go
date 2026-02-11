@@ -321,7 +321,7 @@ func writeFlagHelp(w *bytes.Buffer, fs *flag.FlagSet, wantPrivate bool) {
 // isStringish reports whether v has underlying string type.
 func isStringish(f *flag.Flag) bool {
 	t := reflect.TypeOf(f.Value)
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	return t.Kind() == reflect.String
