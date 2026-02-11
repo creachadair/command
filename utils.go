@@ -23,7 +23,7 @@ func Flags(bind func(*flag.FlagSet, any), vs ...any) func(*Env, *flag.FlagSet) {
 func (c *C) usageLines(flags HelpFlags) []string {
 	var lines []string
 	prefix := c.Name + " "
-	for _, line := range strings.Split(c.Usage, "\n") {
+	for line := range strings.SplitSeq(c.Usage, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
