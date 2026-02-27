@@ -22,8 +22,8 @@ var (
 //	func(*command.Env, s1, s2 string, rest []string) error
 //
 // That is, its first argument must be a pointer to [Env], it must return an
-// error, and the rest of its arguments must be strings except the last, which
-// may be a slice of strings (a "rest parameter").
+// error, and the rest of its arguments (if any) must be strings except the
+// last, which may be a slice of strings (a "rest parameter").
 //
 // The adapted function checks that the arguments presented match the number of
 // strings accepted by fn. If fn is variadic or has a rest parameter, at least
