@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-// Flags returns a SetFlags function that calls bind(fs, v) for each v and the
-// given flag set.
+// Flags returns a function with the signature of the [C.SetFlags] callback,
+// that calls bind(fs, v) for each v and the given flag set.
 func Flags(bind func(*flag.FlagSet, any), vs ...any) func(*Env, *flag.FlagSet) {
 	return func(_ *Env, fs *flag.FlagSet) {
 		for _, v := range vs {

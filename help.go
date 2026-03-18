@@ -48,7 +48,7 @@ With -a or --all, also show help for unlisted commands and private flags.`,
 }
 
 // A HelpTopic specifies a name and some help text for use in constructing help
-// topic commands.
+// topic commands. See [HelpCommand].
 type HelpTopic struct {
 	Name string
 	Help string

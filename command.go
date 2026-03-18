@@ -332,7 +332,7 @@ func (p PanicError) Stack() string { return string(p.stack) }
 // Value returns the value raised with the panic captured by p.
 func (p PanicError) Value() any { return p.value }
 
-// RunOrFail behaves as Run, but prints a log message and calls [os.Exit] if
+// RunOrFail behaves as [Run], but prints a log message and calls [os.Exit] if
 // the command reports an error. If the command succeeds, RunOrFail returns.
 //
 // If a command reports a [UsageError] or [ErrRequestHelp], the exit code is 2.

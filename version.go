@@ -96,7 +96,7 @@ type VersionInfo struct {
 	Time time.Time `json:"time,omitzero"`
 }
 
-// GetVersionInfo returns a VersionInfo record extracted from the build
+// GetVersionInfo returns a [VersionInfo] record extracted from the build
 // metadata in the currently running process. If no build information is
 // available, only the Name field will be populated.
 func GetVersionInfo() VersionInfo {
