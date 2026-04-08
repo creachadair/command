@@ -66,12 +66,12 @@ type Env struct {
 // context, it returns the context of its parent, or if e has no parent it
 // returns a new background context.
 func (e *Env) Context() context.Context {
-	if e.ctx != nil {
-		return e.ctx
-	} else if e.Parent == nil {
-		return context.Background()
+	for cur := e; cur != nil; cur = cur.Parent {
+		if cur.ctx != nil {
+			return cur.ctx
+		}
 	}
-	return e.Parent.Context()
+	return context.Background()
 }
 
 // Cancel cancels the context associated with e with the given cause.
@@ -79,15 +79,16 @@ func (e *Env) Context() context.Context {
 // parent if one exists. If e has no parent and no context, Cancel does nothing
 // without error.
 func (e *Env) Cancel(cause error) {
-	if e.cancel != nil {
-		e.cancel(cause)
-	} else if e.Parent != nil {
-		e.Parent.Cancel(cause)
+	for cur := e; cur != nil; cur = cur.Parent {
+		if cur.cancel != nil {
+			cur.cancel(cause)
+			return
+		}
 	}
 }
 
 // SetContext sets the context of e to ctx and returns e.  If ctx == nil it
-// clears the context of e so that it defaults to its parent (see Context).
+// clears the context of e so that it defaults to its parent (see [Env.Context]).
 func (e *Env) SetContext(ctx context.Context) *Env {
 	if ctx == nil {
 		e.ctx = nil
