@@ -180,6 +180,18 @@ func (e *Env) parseFlags(rawArgs []string) error {
 	return nil
 }
 
+// IsFlagSet reports whether the specified flag is set on e. It can report true
+// only after flags have been parsed.
+func (e *Env) IsFlagSet(name string) bool {
+	var isSet bool
+	e.Command.Flags.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			isSet = true
+		}
+	})
+	return isSet
+}
+
 // C carries the description and invocation function for a command.
 //
 // To process a command-line, the [Run] function walks through the argument

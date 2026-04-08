@@ -54,6 +54,58 @@ func newTestRoot(run func(*command.Env) error) *command.C {
 	}
 }
 
+func TestEnv_IsFlagSet(t *testing.T) {
+
+	checkFlagSet := func(t *testing.T, name string, want bool) func(*command.Env) error {
+		return func(env *command.Env) error {
+			if ok := env.IsFlagSet(name); ok != want {
+				t.Errorf("IsFlagSet(%q): got %v, want %v (args=%+q)", name, ok, want, env.Args)
+			}
+			return nil
+		}
+	}
+
+	var stringFlag string
+	var boolFlag bool
+	tests := []struct {
+		flagName string
+		args     string
+		wantSet  bool
+	}{
+		{"string", "", false},
+		{"bool", "", false},
+		{"string", "a b c", false},
+		{"bool", "a b c", false},
+		{"string", "--string new", true},
+		{"string", "--string new a b c", true},
+		{"string", "a b -string new c", true}, // merged is default
+		{"bool", "--bool", true},
+		{"bool", "-bool a b c", true},
+		{"bool", "a -bool b c", true}, // merged is default
+		{"string", "-string x -bool a b c", true},
+		{"string", "-bool -string x a", true},
+		{"bool", "-string x -bool b", true},
+	}
+
+	for _, tc := range tests {
+		t.Run(fmt.Sprintf("%s_%v", tc.flagName, tc.wantSet), func(t *testing.T) {
+			root := &command.C{
+				Name: "root",
+				SetFlags: func(_ *command.Env, fs *flag.FlagSet) {
+					fs.StringVar(&stringFlag, "string", "old", "String value")
+					fs.BoolVar(&boolFlag, "bool", false, "Boolean value")
+				},
+				Run: checkFlagSet(t, tc.flagName, tc.wantSet),
+			}
+			args := strings.Fields(tc.args)
+			if err := command.Run(root.NewEnv(nil), args); err != nil {
+				t.Errorf("Command failed; %v", err)
+			}
+		})
+	}
+
+}
+
 func TestParse(t *testing.T) {
 	wantArgs := []string{"x", "y"}
 	root := newTestRoot(func(env *command.Env) error {
