@@ -145,6 +145,7 @@ func (e *Env) newChild(cmd *C, cargs []string) *Env {
 	cp.Command = cmd
 	cp.Parent = e
 	cp.Args = cargs
+	cp.didParse = false
 	return &cp
 }
 
