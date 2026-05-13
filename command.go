@@ -157,9 +157,9 @@ func (e *Env) Write(data []byte) (int, error) {
 // If parsing succeeds, it updates env.Args.
 // If flags were already parsed, ParseFlags reports nil.
 //
-// Note: This is done automatically if env.Command does not set CustomFlags.
-// It is safe but unnecessary to call it explicitly, but it is provided to
-// allow an Init hook to use it.
+// Note: This is done automatically if env.Command.CustomFlags is false.
+// It is safe, but unnecessary, to call it explicitly in that case.
+// This method is provided for an Init hook to use when CustomFlags is true.
 func (e *Env) ParseFlags() error {
 	if e.Command.Flags.Parsed() {
 		return nil
