@@ -60,7 +60,6 @@ type Env struct {
 	cancel    context.CancelCauseFunc
 	skipMerge bool      // default: merge flags later in the argument list
 	hflag     HelpFlags // default: no unlisted commands, no private flags
-	didParse  bool      // whether ParseFlags was called
 }
 
 // Context returns the context associated with e. If e does not have its own
@@ -145,7 +144,6 @@ func (e *Env) newChild(cmd *C, cargs []string) *Env {
 	cp.Command = cmd
 	cp.Parent = e
 	cp.Args = cargs
-	cp.didParse = false
 	return &cp
 }
 
@@ -163,16 +161,14 @@ func (e *Env) Write(data []byte) (int, error) {
 // It is safe but unnecessary to call it explicitly, but it is provided to
 // allow an Init hook to use it.
 func (e *Env) ParseFlags() error {
-	if e.didParse {
+	if e.Command.Flags.Parsed() {
 		return nil
 	}
-	e.didParse = true
 	return e.parseFlagsInternal(e.Args)
 }
 
 // parseFlagsInternal parses flags from rawArgs using the flag set from env.Command.
 // If parsing succeeds, it updates env.Args.
-// Note this internal helper does NOT mark env.didParse.
 func (e *Env) parseFlagsInternal(rawArgs []string) error {
 	e.Command.Flags.Usage = func() {}
 	e.Command.Flags.SetOutput(io.Discard)
@@ -410,7 +406,6 @@ func Run(env *Env, rawArgs []string) (err error) {
 		if err := env.parseFlagsInternal(rawArgs); err != nil {
 			return err
 		}
-		env.didParse = true // in case Init calls ParseFlags anyway
 	}
 
 	if cmd.Init != nil {
