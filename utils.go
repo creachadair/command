@@ -75,9 +75,13 @@ func FailWithUsage(env *Env) error {
 
 // splitFlags constructs two slices from args, the first containing all flags
 // and their arguments matched by fs, the second containing all the other free
-// arguments. Flag values are not parsed. Flag-shaped strings not matched by fs
-// are treated as free arguments.  An error is reported if a flag lacks its
-// argument.
+// arguments.
+//
+// The arguments for flags mentioned in fs are checked for presence, but are
+// not parsed.  An error is reported if a flag lacks its argument.
+// Flag-shaped strings NOT matched by fs are treated as free arguments.
+// We do not at this point have enough information to know whether
+// such a flag-candidate requires an argument, as that requires the FlagSet.
 func splitFlags(fs *flag.FlagSet, args []string) (flags, free []string, _ error) {
 	var wantArg bool
 	for _, s := range args {
