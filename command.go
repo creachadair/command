@@ -54,7 +54,7 @@ type Env struct {
 
 	// Log, if non-nil, is where diagnostic output is written when an Env
 	// is used as an [io.Writer]. If nil, it defaults to [os.Stderr].
-	Log io.Writer // where to write diagnostic output (nil for os.Stderr)
+	Log io.Writer
 
 	ctx       context.Context
 	cancel    context.CancelCauseFunc
