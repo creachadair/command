@@ -118,7 +118,7 @@ func TestInfo(t *testing.T) {
 				Flags: []command.FlagInfo{
 					{Name: "b", Usage: "Boolean flag", DefaultString: "false"},
 					{Name: "s", Usage: "String flag", DefaultString: ""},
-					{Name: "z", Usage: "Integer flag", DefaultString: "25"},
+					{Name: "z", Usage: "Integer flag", DefaultString: "25", Private: true},
 				},
 				// no subcommands, they are not requested
 			},
@@ -133,7 +133,7 @@ func TestInfo(t *testing.T) {
 				Flags: []command.FlagInfo{
 					{Name: "b", Usage: "Boolean flag", DefaultString: "false"},
 					{Name: "s", Usage: "String flag", DefaultString: ""},
-					{Name: "z", Usage: "Integer flag", DefaultString: "25"},
+					{Name: "z", Usage: "Integer flag", DefaultString: "25", Private: true},
 				},
 				Commands: []*command.CInfo{{
 					Name:     "unlisted",

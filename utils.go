@@ -167,7 +167,8 @@ type CInfo struct {
 type FlagInfo struct {
 	Name          string `json:"name"`
 	Usage         string `json:"usage"`
-	DefaultString string `json:"defaultString,omitempty"`
+	DefaultString string `json:"defaultString,omitzero"`
+	Private       bool   `json:"private,omitzero"`
 }
 
 // Info constructs a [CInfo] record for c and its subcommands.  The provided
@@ -190,6 +191,7 @@ func (c *C) Info(flags HelpFlags) *CInfo {
 			Name:          f.Name,
 			Usage:         u,
 			DefaultString: f.DefValue,
+			Private:       ok,
 		})
 	})
 	if flags.wantCommands() {
