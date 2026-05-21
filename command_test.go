@@ -159,3 +159,16 @@ func TestInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestRootHelp(t *testing.T) {
+	// It should be safe to use command.RunHelp as the root Run function.
+	root := &command.C{
+		Name:     t.Name(),
+		Run:      command.RunHelp,
+		Help:     "Root command",
+		Commands: []*command.C{{Name: "example", Help: "An example command"}},
+	}
+	if err := command.Run(root.NewEnv(nil), nil); !errors.Is(err, command.ErrRequestHelp) {
+		t.Errorf("Run: got err=%v, want %v", err, command.ErrRequestHelp)
+	}
+}
