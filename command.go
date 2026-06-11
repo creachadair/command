@@ -300,7 +300,7 @@ func (c *C) HasRunnableSubcommands() bool {
 	return false
 }
 
-// NewEnv returns a new root context for c with the optional config value.
+// NewEnv returns a new root environment for c with the optional config value.
 func (c *C) NewEnv(config any) *Env { return &Env{Command: c, Config: config} }
 
 // FindSubcommand returns the subcommand of c matching name, or nil.
