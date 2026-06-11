@@ -153,11 +153,11 @@ func (e *Env) Write(data []byte) (int, error) {
 	return e.output().Write(data)
 }
 
-// ParseFlags parses flags from env.Args using the flag set from env.Command.
-// If parsing succeeds, it updates env.Args.
+// ParseFlags parses flags from env.Args using the flag set from e.Command.
+// If parsing succeeds, it updates e.Args.
 // If flags were already parsed, ParseFlags reports nil.
 //
-// Note: This is done automatically if env.Command.CustomFlags is false.
+// Note: This is done automatically if e.Command.CustomFlags is false.
 // It is safe, but unnecessary, to call it explicitly in that case.
 // This method is provided for an Init hook to use when CustomFlags is true.
 func (e *Env) ParseFlags() error {
@@ -167,7 +167,7 @@ func (e *Env) ParseFlags() error {
 	return e.parseFlagsInternal(e.Args)
 }
 
-// parseFlagsInternal parses flags from rawArgs using the flag set from env.Command.
+// parseFlagsInternal parses flags from rawArgs using the flag set from e.Command.
 // If parsing succeeds, it updates env.Args.
 func (e *Env) parseFlagsInternal(rawArgs []string) error {
 	e.Command.Flags.Usage = func() {}
@@ -326,7 +326,7 @@ type UsageError struct {
 func (u UsageError) Error() string { return string(u.Message) }
 
 // Usagef returns a formatted error that describes a usage error for the
-// command whose environment is e. The result has concrete type UsageError.
+// command whose environment is e. The result has concrete type [UsageError].
 func (e *Env) Usagef(msg string, args ...any) error {
 	return UsageError{Env: e, Message: fmt.Sprintf(msg, args...)}
 }
