@@ -4,7 +4,7 @@ go 1.25.0
 
 require github.com/google/go-cmp v0.7.0
 
-require github.com/creachadair/mds v0.28.1
+require github.com/creachadair/mds v0.29.2
 
 // Bug in flag parsing on nested subcommands.
 retract v0.2.3
