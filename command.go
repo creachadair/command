@@ -153,9 +153,9 @@ func (e *Env) Write(data []byte) (int, error) {
 	return e.output().Write(data)
 }
 
-// ParseFlags parses flags from env.Args using the flag set from e.Command.
-// If parsing succeeds, it updates e.Args.
-// If flags were already parsed, ParseFlags reports nil.
+// ParseFlags parses flags from e.Args using the flag set from e.Command.
+// If parsing succeeds, it updates e.Args in-place.
+// If flags were already parsed, ParseFlags does nothing and reports nil.
 //
 // Note: This is done automatically if e.Command.CustomFlags is false.
 // It is safe, but unnecessary, to call it explicitly in that case.
@@ -168,7 +168,7 @@ func (e *Env) ParseFlags() error {
 }
 
 // parseFlagsInternal parses flags from rawArgs using the flag set from e.Command.
-// If parsing succeeds, it updates env.Args.
+// If parsing succeeds, it updates e.Args in-place.
 func (e *Env) parseFlagsInternal(rawArgs []string) error {
 	e.Command.Flags.Usage = func() {}
 	e.Command.Flags.SetOutput(io.Discard)
