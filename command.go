@@ -147,8 +147,8 @@ func (e *Env) newChild(cmd *C, cargs []string) *Env {
 	return &cp
 }
 
-// Write implements the [io.Writer] interface. Writing to a context writes to its
-// designated output stream, allowing the context to be sent diagnostic output.
+// Write implements the [io.Writer] interface. Writing to e writes to its
+// designated output stream, allowing the environment to be sent diagnostic output.
 func (e *Env) Write(data []byte) (int, error) {
 	return e.output().Write(data)
 }
