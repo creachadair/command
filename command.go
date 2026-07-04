@@ -410,7 +410,7 @@ func Run(env *Env, rawArgs []string) (err error) {
 
 	if cmd.Init != nil {
 		if err := cmd.Init(env); err != nil {
-			return fmt.Errorf("initializing %q: %v", cmd.Name, err)
+			return fmt.Errorf("initializing %q: %w", cmd.Name, err)
 		}
 	}
 
