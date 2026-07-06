@@ -187,10 +187,14 @@ func (c *C) Info(flags HelpFlags) *CInfo {
 		if ok && !flags.wantPrivateFlags() {
 			return // skip
 		}
+		dstring := f.DefValue
+		if ok, err := isZeroValue(f, dstring); err == nil && ok {
+			dstring = ""
+		}
 		out.Flags = append(out.Flags, FlagInfo{
 			Name:          f.Name,
 			Usage:         u,
-			DefaultString: f.DefValue,
+			DefaultString: dstring,
 			Private:       ok,
 		})
 	})
