@@ -79,7 +79,7 @@ func TestInfo(t *testing.T) {
 				Usage: []string{"usage"}, // command name trimmed
 				Help:  "root help",
 				Flags: []command.FlagInfo{
-					{Name: "b", Usage: "Boolean flag", DefaultString: ""},
+					{Name: "b", Usage: "Boolean flag", IsBool: true},
 					{Name: "s", Usage: "String flag", DefaultString: ""},
 
 					// Not z, as it is marked private.
@@ -95,7 +95,7 @@ func TestInfo(t *testing.T) {
 				Usage: []string{"usage"}, // command name trimmed
 				Help:  "root help",
 				Flags: []command.FlagInfo{
-					{Name: "b", Usage: "Boolean flag", DefaultString: ""},
+					{Name: "b", Usage: "Boolean flag", IsBool: true},
 					{Name: "s", Usage: "String flag", DefaultString: ""},
 
 					// Not z, as it is marked private.
@@ -116,7 +116,7 @@ func TestInfo(t *testing.T) {
 				Usage: []string{"usage"}, // command name trimmed
 				Help:  "root help",
 				Flags: []command.FlagInfo{
-					{Name: "b", Usage: "Boolean flag", DefaultString: ""},
+					{Name: "b", Usage: "Boolean flag", IsBool: true},
 					{Name: "s", Usage: "String flag", DefaultString: ""},
 					{Name: "z", Usage: "Integer flag", DefaultString: "25", Private: true},
 				},
@@ -131,7 +131,7 @@ func TestInfo(t *testing.T) {
 				Usage: []string{"usage"}, // command name trimmed
 				Help:  "root help",
 				Flags: []command.FlagInfo{
-					{Name: "b", Usage: "Boolean flag", DefaultString: ""},
+					{Name: "b", Usage: "Boolean flag", IsBool: true},
 					{Name: "s", Usage: "String flag", DefaultString: ""},
 					{Name: "z", Usage: "Integer flag", DefaultString: "25", Private: true},
 				},

@@ -168,6 +168,7 @@ type FlagInfo struct {
 	Name          string `json:"name"`
 	Usage         string `json:"usage"`
 	DefaultString string `json:"defaultString,omitzero"`
+	IsBool        bool   `json:"isBool,omitzero"`
 	Private       bool   `json:"private,omitzero"`
 }
 
@@ -195,6 +196,7 @@ func (c *C) Info(flags HelpFlags) *CInfo {
 			Name:          f.Name,
 			Usage:         u,
 			DefaultString: dstring,
+			IsBool:        isBoolFlag(f),
 			Private:       ok,
 		})
 	})
