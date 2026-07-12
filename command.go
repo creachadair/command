@@ -427,7 +427,11 @@ func Run(env *Env, rawArgs []string) (err error) {
 			// Show help for a topic subcommand with subcommands of its own.
 			return printLongHelp(env.newChild(sub, rest), nil)
 		} else if cmd.Run == nil {
-			fmt.Fprintf(env, "Error: %s command %q not understood\n", cmd.Name, env.Args[0])
+			fmt.Fprintf(env, "Error: %s command %q not understood", cmd.Name, env.Args[0])
+			if opts := findCandidates(cmd, env.Args[0]); len(opts) != 0 {
+				fmt.Fprintf(env, ". Did you mean %s?", joinOptions(opts))
+			}
+			fmt.Fprintln(env)
 			return ErrRequestHelp
 		}
 	}
