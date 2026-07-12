@@ -4,13 +4,20 @@ package command
 
 import (
 	"bytes"
+	"cmp"
 	"flag"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"reflect"
+	"slices"
+	"strconv"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/creachadair/mds/mstr"
+	"github.com/creachadair/mds/slice"
 )
 
 // HelpCommand constructs a standardized help command with optional topics.
@@ -230,44 +237,109 @@ func (e *Env) toStdout() *Env {
 func RunHelp(env *Env) error {
 	// Check whether the arguments describe the parent (assuming there is one)
 	// or one of its subcommands.
+	var res walkResult
 	if env.Parent != nil {
-		target := walkArgs(env.Parent.HelpFlags(env.hflag), env.Args)
-		if target == env.Parent {
+		res = walkArgs(env.Parent.HelpFlags(env.hflag), env.Args)
+		if res.unique == env.Parent {
 			// For the parent, include the help command's own topics.
-			return printLongHelp(target.toStdout(), env.Command.HelpInfo(env.hflag|IncludeCommands).Topics)
-		} else if target != nil {
-			return printLongHelp(target.toStdout(), nil)
+			return printLongHelp(res.unique.toStdout(), env.Command.HelpInfo(env.hflag|IncludeCommands).Topics)
+		} else if res.unique != nil {
+			return printLongHelp(res.unique.toStdout(), nil)
 		}
 	}
 
 	// Otherwise, check whether the arguments name a help subcommand.
-	if ht := walkArgs(env, env.Args); ht != nil {
-		return printLongHelp(ht.toStdout(), nil)
+	hr := walkArgs(env, env.Args)
+	if hr.unique != nil {
+		return printLongHelp(hr.unique.toStdout(), nil)
 	}
 
 	// Otherwise the arguments request an unknown topic.
-	fmt.Fprintf(env, "Unknown help topic %q\n", strings.Join(env.Args, " "))
+	return res.merge(hr).fail(env)
+}
+
+// walkResult is the result of searching a command tree for a help topic.
+type walkResult struct {
+	unique  *Env     // if a unique match was found, its env
+	last    string   // the last argument uniquely resolved
+	rest    []string // remaining argments after last
+	options []string // candidates
+}
+
+// fail reports a diagnostic message to env, and returns [ErrRequestHelp].
+func (w walkResult) fail(env *Env) error {
+	fmt.Fprintf(env, "Unknown help topic %q", strings.Join(w.rest, " "))
+	if w.last != "" {
+		fmt.Fprintf(env, " under %q", w.last)
+	}
+	if opts := w.options; len(opts) != 0 {
+		fmt.Fprintf(env, ". Did you mean: %s?", joinOptions(opts))
+	}
+	fmt.Fprintln(env)
 	return ErrRequestHelp
 }
 
-func walkArgs(env *Env, args []string) *Env {
+// merge returns a copy of w with o merged into it.
+func (w walkResult) merge(o walkResult) walkResult {
+	if w.last == "" {
+		w.last = o.last
+	}
+	if len(w.rest) == 0 {
+		w.rest = o.rest
+	}
+	w.options = append(w.options, o.options...)
+	return w
+}
+
+func walkArgs(env *Env, args []string) (out walkResult) {
 	cur := env
 
-	for _, arg := range args {
+	for i, arg := range args {
 		// If no corresponding subcommand is found, or if the subtree starting
 		// with that command is unlisted and we weren't asked to show unlisted
 		// things, report no match.
 		next := cur.Command.FindSubcommand(arg)
 		if next == nil {
-			return nil
+			out.rest = args[i:] // including arg (which is unresolved)
+			out.options = findCandidates(cur.Command, arg)
+			return
 		} else if next.Unlisted && !env.hflag.wantUnlisted() {
-			return nil // skip unlisted commands when not flagged on
+			out.rest = args[i:]
+			return // skip unlisted commands when not flagged on
 		}
 		// Populate flags so that the help text will include them.
 		next.setFlags(cur, &next.Flags)
 		cur = cur.newChild(next, nil)
+		out.last = arg
 	}
-	return cur
+	out.unique = cur
+	return
+}
+
+func findCandidates(cmd *C, arg string) []string {
+	m := slice.ToMap(cmd.Commands, func(c *C) (string, float64) {
+		return c.Name, mstr.Similarity(c.Name, arg)
+	})
+	maps.DeleteFunc(m, func(_ string, sim float64) bool {
+		return sim < 0.75
+	})
+	names := slice.MapKeys(m)
+	slices.SortFunc(names, func(a, b string) int {
+		return cmp.Compare(m[b], m[a])
+	})
+	return names
+}
+
+func joinOptions(opts []string) string {
+	if len(opts) == 0 {
+		return ""
+	} else if len(opts) == 1 {
+		return strconv.Quote(opts[0])
+	}
+	for i, opt := range opts {
+		opts[i] = strconv.Quote(opt)
+	}
+	return strings.Join(opts[:len(opts)-1], ", ") + " or " + opts[len(opts)-1]
 }
 
 const flagPrivatePrefix = "PRIVATE:"
