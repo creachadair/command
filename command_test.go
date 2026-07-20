@@ -3,12 +3,15 @@
 package command_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"strings"
 	"testing"
 
 	"github.com/creachadair/command"
+	"github.com/creachadair/mds/mtest"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -64,6 +67,12 @@ func TestInfo(t *testing.T) {
 				Help:  "listed help",
 				Run:   func(*command.Env) error { return nil }, // runnable
 			},
+			func() *command.C {
+				c := command.InfoCommand("cinfo")
+				c.Usage = "cinfo usage1\nusage2"
+				c.Help = "cinfo help"
+				return c
+			}(),
 		},
 	}
 	tests := []struct {
@@ -105,6 +114,15 @@ func TestInfo(t *testing.T) {
 					Usage:    []string{"usage"},
 					Help:     "listed help",
 					Runnable: true,
+				}, {
+					Name:     "cinfo",
+					Usage:    []string{"usage1", "usage2"},
+					Help:     "cinfo help",
+					Runnable: true,
+					Flags: []command.FlagInfo{
+						{Name: "a", Usage: "Include unlisted commands and private flags", IsBool: true},
+						{Name: "root-only", Usage: "Show only the root command, not subcommands", IsBool: true},
+					},
 				}},
 			},
 		},
@@ -147,6 +165,15 @@ func TestInfo(t *testing.T) {
 					Usage:    []string{"usage"},
 					Help:     "listed help",
 					Runnable: true,
+				}, {
+					Name:     "cinfo",
+					Usage:    []string{"usage1", "usage2"}, // N.B. trimmed
+					Help:     "cinfo help",
+					Runnable: true,
+					Flags: []command.FlagInfo{
+						{Name: "a", Usage: "Include unlisted commands and private flags", IsBool: true},
+						{Name: "root-only", Usage: "Show only the root command, not subcommands", IsBool: true},
+					},
 				}},
 			},
 		},
@@ -154,6 +181,53 @@ func TestInfo(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			if diff := cmp.Diff(cmd.Info(tc.flags), tc.want); diff != "" {
+				t.Errorf("Wrong output (-got, +want):\n%s", diff)
+			}
+		})
+	}
+
+	mustJSON := func(v any) string {
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(v); err != nil {
+			t.Fatalf("Marshal JSON: %v", err)
+		}
+		return buf.String()
+	}
+
+	icTests := []struct {
+		name string
+		args string
+		want string
+	}{
+		{"Default", "",
+			mustJSON(cmd.Info(command.IncludeCommands))},
+		{"NoCommands", "--root-only",
+			mustJSON(cmd.Info(0))},
+		{"Unlisted", "-a",
+			mustJSON(cmd.Info(command.IncludeAll))},
+		{"Unlisted/NoCommands", "-root-only -a",
+			mustJSON(cmd.Info(command.IncludeUnlisted | command.IncludePrivateFlags))},
+		{"Subcommand/Listed", "listed",
+			mustJSON(cmd.Commands[1].Info(command.IncludeCommands))},
+		{"Subcommand/Unlisted", "-a unlisted",
+			mustJSON(cmd.Commands[0].Info(command.IncludeAll))},
+		{"Flag/Listed", "-- cinfo -root-only",
+			`{"name":"root-only","usage":"Show only the root command, not subcommands","isBool":true}` + "\n"},
+		{"Flag/Unlisted", "-a unlisted -q",
+			`{"name":"q","usage":"Float flag","defaultString":"0.1"}` + "\n"},
+	}
+	for _, tc := range icTests {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			err := mtest.CaptureStdout(&buf, func() error {
+				args := append([]string{"cinfo"}, strings.Fields(tc.args)...)
+				t.Logf("args: %+q", args)
+				return command.Run(cmd.NewEnv(nil), args)
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(buf.String(), tc.want); diff != "" {
 				t.Errorf("Wrong output (-got, +want):\n%s", diff)
 			}
 		})

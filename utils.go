@@ -3,9 +3,15 @@
 package command
 
 import (
+	"cmp"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
+	"slices"
 	"strings"
+
+	"github.com/creachadair/mds/value"
 )
 
 // Flags returns a function with the signature of the [C.SetFlags] callback,
@@ -160,6 +166,64 @@ type CInfo struct {
 	Flags    []FlagInfo `json:"flags,omitempty"`
 	Unlisted bool       `json:"unlisted,omitzero"`
 	Commands []*CInfo   `json:"commands,omitempty"`
+}
+
+// InfoCommand constructs a standardized info command with the specified name
+// ("command-info" by default) that prints command structure metadata in JSON
+// format. The caller is free to edit the resulting command, each call returns
+// a separate value.
+//
+// Without arguments, the complete structure of the root command is printed.
+// With arguments, only the named subcommand and its substructure are printed.
+// Unlisted commands and private flags are omitted unless "-a" is given.
+// Use "--root-only" to omit subcommands.
+func InfoCommand(name string) *C {
+	var doAll, doRootOnly bool
+	return &C{
+		Name:  cmp.Or(name, "command-info"),
+		Usage: "[subcommand ... [--flag]]",
+		Help:  "Write command structure to stdout as JSON.",
+		SetFlags: func(env *Env, fs *flag.FlagSet) {
+			fs.BoolVar(&doAll, "a", false, "Include unlisted commands and private flags")
+			fs.BoolVar(&doRootOnly, "root-only", false, "Show only the root command, not subcommands")
+		},
+		Run: func(env *Env) error {
+			defer func() { doAll = false; doRootOnly = false }()
+			cur := env
+			for cur.Parent != nil {
+				cur = cur.Parent
+			}
+			// Include commands up front so we can walk the tree if we need to.
+			opts := value.Cond(doAll, IncludeAll, IncludeCommands)
+			info := cur.Command.Info(opts)
+			for i, arg := range env.Args {
+				if strings.HasPrefix(arg, "-") {
+					if i+1 < len(env.Args) {
+						return fmt.Errorf("extra arguments after flag %q: %q", arg, env.Args[i+1:])
+					}
+					clean := strings.TrimLeft(arg, "-")
+					pos := slices.IndexFunc(info.Flags, func(f FlagInfo) bool {
+						return f.Name == clean
+					})
+					if pos < 0 {
+						return fmt.Errorf("command %q has no flag %q", info.Name, arg)
+					}
+					return json.NewEncoder(os.Stdout).Encode(info.Flags[pos])
+				}
+				pos := slices.IndexFunc(info.Commands, func(c *CInfo) bool {
+					return c.Name == arg
+				})
+				if pos < 0 {
+					return fmt.Errorf("command %q has no subcommand %q", info.Name, arg)
+				}
+				info = info.Commands[pos]
+			}
+			if doRootOnly {
+				info.Commands = nil
+			}
+			return json.NewEncoder(os.Stdout).Encode(info)
+		},
+	}
 }
 
 // FlagInfo represents metadata about a flag defined by a command, in a format
