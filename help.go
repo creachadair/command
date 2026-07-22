@@ -303,10 +303,10 @@ func walkArgs(env *Env, args []string) (out walkResult) {
 			out.rest = args[i:] // including arg (which is unresolved)
 			out.options = findCandidates(cur.Command, arg)
 			return
-		} else if next.Unlisted && !env.hflag.wantUnlisted() {
-			out.rest = args[i:]
-			return // skip unlisted commands when not flagged on
 		}
+		// Note: If the caller explicitly names an unlisted command, we
+		// will still report help for it, even if -a / --all is not set.
+
 		// Populate flags so that the help text will include them.
 		next.setFlags(cur, &next.Flags)
 		cur = cur.newChild(next, nil)
