@@ -243,7 +243,7 @@ func (c *C) Info(flags HelpFlags) *CInfo {
 	out := &CInfo{
 		Name:     c.Name,
 		Usage:    c.usageLines(flags),
-		Help:     c.Help,
+		Help:     strings.TrimSpace(c.Help),
 		Runnable: c.Runnable(),
 		Unlisted: c.Unlisted,
 	}
