@@ -1,10 +1,10 @@
 module github.com/creachadair/command
 
-go 1.25.0
+go 1.26.0
 
 require github.com/google/go-cmp v0.7.0
 
-require github.com/creachadair/mds v0.30.5
+require github.com/creachadair/mds v0.31.0
 
 // Bug in flag parsing on nested subcommands.
 retract v0.2.3
