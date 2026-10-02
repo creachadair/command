@@ -65,11 +65,11 @@ func (h HelpTopic) command() *C { return &C{Name: h.Name, Help: h.Help} }
 
 // HelpInfo records synthesized help details for a command.
 type HelpInfo struct {
-	Name     string
-	Synopsis string
-	Usage    string
-	Help     string
-	Flags    string
+	Name     string // the name of the root command
+	Synopsis string // the first line of Help, if present
+	Usage    string // formatted usage summaries, if provided
+	Help     string // the complete help text
+	Flags    string // formatted flag help, if provided
 
 	// Help for subcommands (populated if requested)
 	Commands []HelpInfo
