@@ -229,11 +229,20 @@ func InfoCommand(name string) *C {
 // FlagInfo represents metadata about a flag defined by a command, in a format
 // suitable for JSON encoding.
 type FlagInfo struct {
-	Name          string `json:"name"`
-	Usage         string `json:"usage"`
+	// The base name of the flag, without a "-" or "--" prefix.
+	Name string `json:"name"`
+
+	// The usage string for the flag.
+	Usage string `json:"usage"`
+
+	// If the flag has a default value, the string representation of that value.
 	DefaultString string `json:"defaultString,omitzero"`
-	IsBool        bool   `json:"isBool,omitzero"`
-	Private       bool   `json:"private,omitzero"`
+
+	// Whether the flag is Boolean (and thus does not require an argument).
+	IsBool bool `json:"isBool,omitzero"`
+
+	// Whether the flag is marked as "private" for listings.
+	Private bool `json:"private,omitzero"`
 }
 
 // Info constructs a [CInfo] record for c and its subcommands.  The provided
