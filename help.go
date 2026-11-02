@@ -137,13 +137,13 @@ func (c *C) HelpInfo(flags HelpFlags) HelpInfo {
 }
 
 func (c *C) hasFlagsDefined(wantPrivate bool) (ok bool) {
-	if !c.CustomFlags {
-		c.Flags.VisitAll(func(f *flag.Flag) {
-			if !strings.HasPrefix(f.Usage, flagPrivatePrefix) || wantPrivate {
-				ok = true
-			}
-		})
-	}
+	// Note: We visit the flag set even if CustomFlags is true, since it is
+	// possible the custom flag processing still uses it.
+	c.Flags.VisitAll(func(f *flag.Flag) {
+		if !strings.HasPrefix(f.Usage, flagPrivatePrefix) || wantPrivate {
+			ok = true
+		}
+	})
 	return
 }
 
